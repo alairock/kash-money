@@ -554,13 +554,12 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 							setInlineAmount(item.amount.toString());
 							setEditingField('amount');
 						}}
-						className={`cursor-pointer ${
-							item.amount > 0 
-								? 'text-green-300 hover:text-green-100' 
-								: item.amount < 0 
-								? 'text-red-300 hover:text-red-100' 
-								: 'text-white/80 hover:text-white'
-						}`}
+						className={`cursor-pointer ${item.amount > 0
+								? 'text-green-300 hover:text-green-100'
+								: item.amount < 0
+									? 'text-red-300 hover:text-red-100'
+									: 'text-white/80 hover:text-white'
+							}`}
 					>
 						${item.amount.toFixed(2)}
 					</span>

@@ -327,13 +327,12 @@ const RecurringExpenseRow = ({
 				</div>
 			</td>
 			<td className="px-4 py-2 font-semibold">{expense.name}</td>
-			<td className={`px-4 py-2 font-bold ${
-				expense.amount > 0 
-					? 'text-green-300' 
-					: expense.amount < 0 
-					? 'text-red-300' 
-					: 'text-white/80'
-			}`}>
+			<td className={`px-4 py-2 font-bold ${expense.amount > 0
+					? 'text-green-300'
+					: expense.amount < 0
+						? 'text-red-300'
+						: 'text-white/80'
+				}`}>
 				${expense.amount.toFixed(2)}
 			</td>
 			<td className="px-4 py-2">
