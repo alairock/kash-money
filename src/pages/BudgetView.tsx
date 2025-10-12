@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, forwardRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import type { Budget, BudgetLineItem } from '../types/budget';
 import { getBudget, updateBudget } from '../utils/storage';
@@ -12,6 +12,7 @@ export const BudgetView = () => {
 	const [editingStartingAmount, setEditingStartingAmount] = useState(false);
 	const [startingAmountValue, setStartingAmountValue] = useState('0');
 	const [loading, setLoading] = useState(true);
+	const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
 	const rowRefs = useRef<{ [key: string]: HTMLTableRowElement | null }>({});
 
 	useEffect(() => {
@@ -55,6 +56,7 @@ export const BudgetView = () => {
 		await updateBudget(updatedBudget);
 		setBudget(updatedBudget);
 		setEditingId(newItem.id);
+		setNewlyCreatedId(newItem.id); // Mark this as newly created
 
 		// Scroll to the new row after it's been added to the DOM
 		setTimeout(() => {
@@ -81,6 +83,22 @@ export const BudgetView = () => {
 
 		await updateBudget(updatedBudget);
 		setBudget(updatedBudget);
+	};
+
+	const handleCancelEdit = async (itemId: string) => {
+		// If this is a newly created item that hasn't been saved yet, delete it
+		if (itemId === newlyCreatedId) {
+			await handleDeleteItem(itemId);
+			setNewlyCreatedId(null);
+		}
+		// Close editing mode
+		setEditingId(null);
+	};
+
+	const handleSaveEdit = () => {
+		// Clear the newly created flag when saving
+		setNewlyCreatedId(null);
+		setEditingId(null);
 	};
 
 	const handleUpdateItem = async (itemId: string, updates: Partial<BudgetLineItem>) => {
@@ -271,11 +289,12 @@ export const BudgetView = () => {
 									index={index}
 									isEditing={editingId === item.id}
 									onEdit={() => setEditingId(item.id)}
-									onSave={() => setEditingId(null)}
+									onSave={handleSaveEdit}
+									onCancel={() => handleCancelEdit(item.id)}
 									onUpdate={handleUpdateItem}
 									onDelete={handleDeleteItem}
 									onReorder={handleReorderItems}
-									ref={(el) => {
+									ref={(el: HTMLTableRowElement | null) => {
 										rowRefs.current[item.id] = el;
 									}}
 								/>
@@ -318,12 +337,13 @@ interface LineItemRowProps {
 	isEditing: boolean;
 	onEdit: () => void;
 	onSave: () => void;
+	onCancel: () => void;
 	onUpdate: (id: string, updates: Partial<BudgetLineItem>) => void;
 	onDelete: (id: string) => void;
 	onReorder: (dragIndex: number, dropIndex: number) => void;
 }
 
-const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onUpdate, onDelete, onReorder }: LineItemRowProps & { ref?: React.RefObject<HTMLTableRowElement | null> }) => {
+const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, onUpdate, onDelete, onReorder }: LineItemRowProps & { ref?: (el: HTMLTableRowElement | null) => void }) => {
 	const [editValues, setEditValues] = useState({
 		status: item.status,
 		name: item.name,
@@ -495,7 +515,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onUpdate, on
 									link: item.link || '',
 									note: item.note || '',
 								});
-								onSave();
+								onCancel();
 							}}
 							className="rounded-lg bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30"
 						>
