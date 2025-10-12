@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { useAuth } from '../hooks/useAuth';
@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 export const Nav = () => {
 	const { currentUser } = useAuth();
 	const navigate = useNavigate();
+	const location = useLocation();
 
 	const linkClass = ({ isActive }: { isActive: boolean }) =>
 		`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'glass-effect text-white shadow-lg' : 'text-white/80 hover:text-white hover:glass-dark'}`;
@@ -50,9 +51,25 @@ export const Nav = () => {
 							</button>
 						</>
 					) : (
-						<NavLink to="/login" className={linkClass}>
-							Login
-						</NavLink>
+						<>
+							{location.pathname === '/login' || location.pathname === '/forgot-password' ? (
+								<button
+									type="button"
+									onClick={() => navigate('/signup')}
+									className="gradient-success rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105"
+								>
+									Sign up
+								</button>
+							) : (
+								<button
+									type="button"
+									onClick={() => navigate('/login')}
+									className="gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105"
+								>
+									Login
+								</button>
+							)}
+						</>
 					)}
 				</div>
 			</div>
