@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import type { Budget, BudgetLineItem } from '../types/budget';
 import { getBudget, updateBudget } from '../utils/storage';
@@ -12,6 +12,7 @@ export const BudgetView = () => {
 	const [editingStartingAmount, setEditingStartingAmount] = useState(false);
 	const [startingAmountValue, setStartingAmountValue] = useState('0');
 	const [loading, setLoading] = useState(true);
+	const rowRefs = useRef<{ [key: string]: HTMLTableRowElement | null }>({});
 
 	useEffect(() => {
 		const loadBudget = async () => {
@@ -54,6 +55,20 @@ export const BudgetView = () => {
 		await updateBudget(updatedBudget);
 		setBudget(updatedBudget);
 		setEditingId(newItem.id);
+
+		// Scroll to the new row after it's been added to the DOM
+		setTimeout(() => {
+			const row = rowRefs.current[newItem.id];
+			if (row) {
+				row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				// Focus on the name input field
+				const nameInput = row.querySelector('input[type="text"]') as HTMLInputElement;
+				if (nameInput) {
+					nameInput.focus();
+					nameInput.select();
+				}
+			}
+		}, 100);
 	};
 
 	const handleDeleteItem = async (itemId: string) => {
@@ -260,6 +275,9 @@ export const BudgetView = () => {
 									onUpdate={handleUpdateItem}
 									onDelete={handleDeleteItem}
 									onReorder={handleReorderItems}
+									ref={(el) => {
+										rowRefs.current[item.id] = el;
+									}}
 								/>
 							))
 						)}
@@ -277,7 +295,14 @@ export const BudgetView = () => {
 					</div>
 					<div className="flex justify-between border-t-2 border-white/20 pt-3">
 						<span className="text-lg font-bold text-white/80">Final Total (After All Items):</span>
-						<span className="gradient-gold rounded-xl px-4 py-2 text-3xl font-black text-purple-900 shadow-lg">
+						<span
+							className={`rounded-xl px-4 py-2 text-3xl font-black shadow-lg ${totals.finalTotal < 0
+								? 'bg-gradient-to-r from-red-600 to-red-800 text-white'
+								: totals.finalTotal > 0
+									? 'gradient-gold text-purple-900'
+									: 'bg-white/20 text-white'
+								}`}
+						>
 							{formatCurrency(totals.finalTotal)}
 						</span>
 					</div>
@@ -298,7 +323,7 @@ interface LineItemRowProps {
 	onReorder: (dragIndex: number, dropIndex: number) => void;
 }
 
-const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelete, onReorder }: LineItemRowProps) => {
+const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onUpdate, onDelete, onReorder }: LineItemRowProps & { ref?: React.RefObject<HTMLTableRowElement | null> }) => {
 	const [editValues, setEditValues] = useState({
 		status: item.status,
 		name: item.name,
@@ -376,6 +401,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 		const bgClass = isIncompleteNegative ? 'bg-red-500/20' : isPositive ? 'bg-green-500/20' : 'bg-white/10';
 		return (
 			<tr
+				ref={ref}
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onDrop={handleDrop}
@@ -490,6 +516,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 
 	return (
 		<tr
+			ref={ref}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
@@ -602,3 +629,4 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 		</tr>
 	);
 };
+
