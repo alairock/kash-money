@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import type { Budget, BudgetLineItem } from '../types/budget';
 import { getBudget, updateBudget } from '../utils/storage';
+import { formatCurrency } from '../utils/formatCurrency';
 
 export const BudgetView = () => {
 	const { id } = useParams<{ id: string }>();
@@ -39,6 +40,8 @@ export const BudgetView = () => {
 			status: 'incomplete',
 			name: 'New Item',
 			amount: 0,
+			link: '',
+			note: '',
 			isRecurring: false,
 			isMarked: false,
 		};
@@ -193,7 +196,7 @@ export const BudgetView = () => {
 							</div>
 						) : (
 							<p className="gradient-gold mt-2 inline-block rounded-xl px-4 py-2 text-3xl font-black text-purple-900 shadow-lg">
-								${budget.startingAmount.toFixed(2)}
+								{formatCurrency(budget.startingAmount)}
 							</p>
 						)}
 					</div>
@@ -270,12 +273,12 @@ export const BudgetView = () => {
 				<div className="space-y-3">
 					<div className="flex justify-between">
 						<span className="text-white/80">After Unmarked Items:</span>
-						<span className="text-2xl font-bold text-cyan-300">${totals.unmarkedTotal.toFixed(2)}</span>
+						<span className="text-2xl font-bold text-cyan-300">{formatCurrency(totals.unmarkedTotal)}</span>
 					</div>
 					<div className="flex justify-between border-t-2 border-white/20 pt-3">
 						<span className="text-lg font-bold text-white/80">Final Total (After All Items):</span>
 						<span className="gradient-gold rounded-xl px-4 py-2 text-3xl font-black text-purple-900 shadow-lg">
-							${totals.finalTotal.toFixed(2)}
+							{formatCurrency(totals.finalTotal)}
 						</span>
 					</div>
 				</div>
@@ -342,8 +345,8 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 			status: editValues.status,
 			name: editValues.name,
 			amount,
-			link: editValues.link || undefined,
-			note: editValues.note || undefined,
+			link: editValues.link || '',
+			note: editValues.note || '',
 		});
 		onSave();
 	};
@@ -555,13 +558,13 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 							setEditingField('amount');
 						}}
 						className={`cursor-pointer ${item.amount > 0
-								? 'text-green-300 hover:text-green-100'
-								: item.amount < 0
-									? 'text-red-300 hover:text-red-100'
-									: 'text-white/80 hover:text-white'
+							? 'text-green-300 hover:text-green-100'
+							: item.amount < 0
+								? 'text-red-300 hover:text-red-100'
+								: 'text-white/80 hover:text-white'
 							}`}
 					>
-						${item.amount.toFixed(2)}
+						{formatCurrency(item.amount)}
 					</span>
 				)}
 			</td>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Budget, BudgetLineItem } from '../types/budget';
 import { getBudgets, createBudget, deleteBudget, getRecurringExpenses } from '../utils/storage';
+import { formatCurrency } from '../utils/formatCurrency';
 
 export const Budgets = () => {
 	const navigate = useNavigate();
@@ -127,7 +128,7 @@ export const Budgets = () => {
 								<h3 className="text-2xl font-bold text-white">{budget.name}</h3>
 								<p className="text-sm text-white/70">📅 Created: {formatDate(budget.dateCreated)}</p>
 								<p className="gradient-gold mt-1 inline-block rounded-lg px-3 py-1 text-sm font-bold text-purple-900">
-									💵 ${budget.startingAmount.toFixed(2)}
+									💵 {formatCurrency(budget.startingAmount)}
 								</p>
 							</div>
 							<div className="flex gap-3">
