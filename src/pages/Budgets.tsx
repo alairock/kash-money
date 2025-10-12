@@ -57,8 +57,8 @@ export const Budgets = () => {
 				status,
 				name: expense.name,
 				amount: expense.amount,
-				link: expense.link,
-				note: expense.note,
+				link: expense.link || '',
+				note: expense.note || '',
 				isRecurring: true,
 				isMarked: false,
 			};
