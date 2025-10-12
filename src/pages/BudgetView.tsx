@@ -419,15 +419,16 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 		const isIncompleteNegative = item.status === 'incomplete' && item.amount < 0;
 		const isPositive = item.amount > 0;
 		const bgClass = isIncompleteNegative ? 'bg-red-500/20' : isPositive ? 'bg-green-500/20' : 'bg-white/10';
+		const cellOpacity = isDimmed ? 'opacity-50' : '';
 		return (
 			<tr
 				ref={ref}
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onDrop={handleDrop}
-				className={`border-b border-white/10 ${isDimmed ? 'opacity-50' : ''} ${bgClass} backdrop-blur-sm ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
+				className={`border-b border-white/10 ${bgClass} backdrop-blur-sm ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
 			>
-				<td className="px-2 py-2">
+				<td className={`px-2 py-2 ${cellOpacity}`}>
 					<div
 						draggable
 						onDragStart={handleDragStart}
@@ -439,7 +440,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 						</svg>
 					</div>
 				</td>
-				<td className="px-4 py-2">
+				<td className={`px-4 py-2 ${cellOpacity}`}>
 					<input
 						type="checkbox"
 						checked={item.isMarked}
@@ -447,7 +448,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 						className="h-4 w-4"
 					/>
 				</td>
-				<td className="px-4 py-2">
+				<td className={`px-4 py-2 ${cellOpacity}`}>
 					<select
 						value={editValues.status}
 						onChange={(e) => setEditValues({ ...editValues, status: e.target.value as 'incomplete' | 'complete' | 'automatic' })}
@@ -458,7 +459,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 						<option value="automatic">Automatic</option>
 					</select>
 				</td>
-				<td className="px-4 py-2">
+				<td className={`px-4 py-2 ${cellOpacity}`}>
 					<input
 						type="text"
 						value={editValues.name}
@@ -476,7 +477,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 						placeholder="0.00"
 					/>
 				</td>
-				<td className="px-4 py-2">
+				<td className={`px-4 py-2 ${cellOpacity}`}>
 					<input
 						type="text"
 						value={editValues.link}
@@ -485,7 +486,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 						placeholder="http://..."
 					/>
 				</td>
-				<td className="px-4 py-2">
+				<td className={`px-4 py-2 ${cellOpacity}`}>
 					<input
 						type="text"
 						value={editValues.note}
@@ -493,7 +494,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 					/>
 				</td>
-				<td className="px-4 py-2">
+				<td className={`px-4 py-2 ${cellOpacity}`}>
 					<span className="text-xs text-white/70">{item.isRecurring ? 'Recurring' : 'Ad-hoc'}</span>
 				</td>
 				<td className="px-4 py-2">
@@ -531,6 +532,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 	const isIncompleteNegative = item.status === 'incomplete' && item.amount < 0;
 	const isPositive = item.amount > 0;
 	const bgClass = isIncompleteNegative ? 'bg-red-500/20 hover:bg-red-500/30' : isPositive ? 'bg-green-500/20 hover:bg-green-500/30' : 'hover:bg-white/5';
+	const cellOpacity = isDimmed ? 'opacity-50' : '';
 
 	const statusDisplay = item.status.charAt(0).toUpperCase() + item.status.slice(1);
 
@@ -540,9 +542,9 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
-			className={`border-b border-white/10 transition-all ${isDimmed ? 'opacity-50' : ''} ${bgClass} ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
+			className={`border-b border-white/10 transition-all ${bgClass} ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
 		>
-			<td className="px-2 py-2">
+			<td className={`px-2 py-2 ${cellOpacity}`}>
 				<div
 					draggable
 					onDragStart={handleDragStart}
@@ -554,10 +556,10 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 					</svg>
 				</div>
 			</td>
-			<td className="w-0 p-0 overflow-hidden">
+			<td className={`w-0 p-0 overflow-hidden ${cellOpacity}`}>
 				{/* Marked checkbox only visible when editing */}
 			</td>
-			<td className="px-4 py-2">
+			<td className={`px-4 py-2 ${cellOpacity}`}>
 				{editingField === 'status' ? (
 					<select
 						value={item.status}
@@ -582,7 +584,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 					</span>
 				)}
 			</td>
-			<td className="px-4 py-2 font-semibold">{item.name}</td>
+			<td className={`px-4 py-2 font-semibold ${cellOpacity}`}>{item.name}</td>
 			<td className="px-4 py-2 font-bold">
 				{editingField === 'amount' ? (
 					<input
@@ -615,7 +617,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 					</span>
 				)}
 			</td>
-			<td className="px-4 py-2">
+			<td className={`px-4 py-2 ${cellOpacity}`}>
 				{item.link ? (
 					<a href={item.link} target="_blank" rel="noopener noreferrer" className="text-cyan-300 hover:text-cyan-100 hover:underline">
 						🔗 Link
@@ -624,8 +626,8 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 					<span className="text-white/40">—</span>
 				)}
 			</td>
-			<td className="px-4 py-2 text-sm text-white/80">{item.note || '—'}</td>
-			<td className="px-4 py-2">
+			<td className={`px-4 py-2 text-sm text-white/80 ${cellOpacity}`}>{item.note || '—'}</td>
+			<td className={`px-4 py-2 ${cellOpacity}`}>
 				<span className="text-xs text-white/70">{item.isRecurring ? 'Recurring' : 'Ad-hoc'}</span>
 			</td>
 			<td className="px-4 py-2">
