@@ -10,18 +10,24 @@ import {
 export const Config = () => {
 	const [expenses, setExpenses] = useState<RecurringExpense[]>([]);
 	const [editingId, setEditingId] = useState<string | null>(null);
+	const [loading, setLoading] = useState(true);
 
-	const loadExpenses = useCallback(() => {
-		const loadedExpenses = getRecurringExpenses();
-		// eslint-disable-next-line @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
-		setExpenses(loadedExpenses);
+	const loadExpenses = useCallback(async () => {
+		try {
+			const loadedExpenses = await getRecurringExpenses();
+			setExpenses(loadedExpenses);
+		} catch (error) {
+			console.error('Error loading expenses:', error);
+		} finally {
+			setLoading(false);
+		}
 	}, []);
 
 	useEffect(() => {
 		loadExpenses();
 	}, [loadExpenses]);
 
-	const handleAddExpense = () => {
+	const handleAddExpense = async () => {
 		const newExpense: RecurringExpense = {
 			id: crypto.randomUUID(),
 			name: 'New Expense',
@@ -29,35 +35,37 @@ export const Config = () => {
 			isAutomatic: false,
 		};
 
-		createRecurringExpense(newExpense);
+		await createRecurringExpense(newExpense);
 		setExpenses([...expenses, newExpense]);
 		setEditingId(newExpense.id);
 	};
 
-	const handleUpdateExpense = (id: string, updates: Partial<RecurringExpense>) => {
+	const handleUpdateExpense = async (id: string, updates: Partial<RecurringExpense>) => {
 		const expense = expenses.find(e => e.id === id);
 		if (expense) {
 			const updated = { ...expense, ...updates };
-			updateRecurringExpense(updated);
+			await updateRecurringExpense(updated);
 			setExpenses(expenses.map(e => (e.id === id ? updated : e)));
 		}
 	};
 
-	const handleDeleteExpense = (id: string) => {
+	const handleDeleteExpense = async (id: string) => {
 		if (confirm('Are you sure you want to delete this recurring expense?')) {
-			deleteRecurringExpense(id);
+			await deleteRecurringExpense(id);
 			setExpenses(expenses.filter(e => e.id !== id));
 		}
 	};
 
-	const handleReorderExpenses = (dragIndex: number, dropIndex: number) => {
+	const handleReorderExpenses = async (dragIndex: number, dropIndex: number) => {
 		const items = [...expenses];
 		const [draggedItem] = items.splice(dragIndex, 1);
 		items.splice(dropIndex, 0, draggedItem);
 
 		setExpenses(items);
 		// Update all expenses in storage to maintain order
-		items.forEach(expense => updateRecurringExpense(expense));
+		for (const expense of items) {
+			await updateRecurringExpense(expense);
+		}
 	};
 
 	return (
@@ -94,7 +102,13 @@ export const Config = () => {
 							</tr>
 						</thead>
 						<tbody>
-							{expenses.length === 0 ? (
+							{loading ? (
+								<tr>
+									<td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+										Loading expenses...
+									</td>
+								</tr>
+							) : expenses.length === 0 ? (
 								<tr>
 									<td colSpan={7} className="px-4 py-8 text-center text-gray-400">
 										No recurring expenses yet. Add one to get started!

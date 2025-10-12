@@ -1,71 +1,203 @@
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+} from 'firebase/firestore';
+import { db, auth } from '../config/firebase';
 import type { Budget, RecurringExpense } from '../types/budget';
 
-const BUDGETS_KEY = 'budgets';
-const RECURRING_EXPENSES_KEY = 'recurringExpenses';
+const BUDGETS_COLLECTION = 'budgets';
+const RECURRING_EXPENSES_COLLECTION = 'recurringExpenses';
+
+// Helper to get user ID from authenticated user
+const getUserId = () => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) {
+    throw new Error('User not authenticated');
+  }
+  return uid;
+};
 
 // Budgets
-export const getBudgets = (): Budget[] => {
-  const data = localStorage.getItem(BUDGETS_KEY);
-  return data ? JSON.parse(data) : [];
-};
-
-export const saveBudgets = (budgets: Budget[]): void => {
-  localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
-};
-
-export const getBudget = (id: string): Budget | undefined => {
-  const budgets = getBudgets();
-  return budgets.find((b) => b.id === id);
-};
-
-export const createBudget = (budget: Budget): void => {
-  const budgets = getBudgets();
-  budgets.push(budget);
-  saveBudgets(budgets);
-};
-
-export const updateBudget = (budget: Budget): void => {
-  const budgets = getBudgets();
-  const index = budgets.findIndex((b) => b.id === budget.id);
-  if (index !== -1) {
-    budgets[index] = budget;
-    saveBudgets(budgets);
+export const getBudgets = async (): Promise<Budget[]> => {
+  try {
+    const userId = getUserId();
+    const budgetsRef = collection(db, 'users', userId, BUDGETS_COLLECTION);
+    const q = query(budgetsRef, orderBy('dateCreated', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Budget[];
+  } catch (error) {
+    console.error('Error getting budgets:', error);
+    return [];
   }
 };
 
-export const deleteBudget = (id: string): void => {
-  const budgets = getBudgets();
-  const filtered = budgets.filter((b) => b.id !== id);
-  saveBudgets(filtered);
+export const getBudget = async (id: string): Promise<Budget | undefined> => {
+  try {
+    const userId = getUserId();
+    const budgetRef = doc(db, 'users', userId, BUDGETS_COLLECTION, id);
+    const snapshot = await getDoc(budgetRef);
+    if (snapshot.exists()) {
+      return { id: snapshot.id, ...snapshot.data() } as Budget;
+    }
+    return undefined;
+  } catch (error) {
+    console.error('Error getting budget:', error);
+    return undefined;
+  }
+};
+
+export const createBudget = async (budget: Budget): Promise<void> => {
+  try {
+    const userId = getUserId();
+    const budgetsRef = collection(db, 'users', userId, BUDGETS_COLLECTION);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...budgetData } = budget;
+    await addDoc(budgetsRef, budgetData);
+  } catch (error) {
+    console.error('Error creating budget:', error);
+    throw error;
+  }
+};
+
+export const updateBudget = async (budget: Budget): Promise<void> => {
+  try {
+    const userId = getUserId();
+    const budgetRef = doc(db, 'users', userId, BUDGETS_COLLECTION, budget.id);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...budgetData } = budget;
+    await updateDoc(budgetRef, budgetData);
+  } catch (error) {
+    console.error('Error updating budget:', error);
+    throw error;
+  }
+};
+
+export const deleteBudget = async (id: string): Promise<void> => {
+  try {
+    const userId = getUserId();
+    const budgetRef = doc(db, 'users', userId, BUDGETS_COLLECTION, id);
+    await deleteDoc(budgetRef);
+  } catch (error) {
+    console.error('Error deleting budget:', error);
+    throw error;
+  }
 };
 
 // Recurring Expenses
-export const getRecurringExpenses = (): RecurringExpense[] => {
-  const data = localStorage.getItem(RECURRING_EXPENSES_KEY);
-  return data ? JSON.parse(data) : [];
-};
-
-export const saveRecurringExpenses = (expenses: RecurringExpense[]): void => {
-  localStorage.setItem(RECURRING_EXPENSES_KEY, JSON.stringify(expenses));
-};
-
-export const createRecurringExpense = (expense: RecurringExpense): void => {
-  const expenses = getRecurringExpenses();
-  expenses.push(expense);
-  saveRecurringExpenses(expenses);
-};
-
-export const updateRecurringExpense = (expense: RecurringExpense): void => {
-  const expenses = getRecurringExpenses();
-  const index = expenses.findIndex((e) => e.id === expense.id);
-  if (index !== -1) {
-    expenses[index] = expense;
-    saveRecurringExpenses(expenses);
+export const getRecurringExpenses = async (): Promise<RecurringExpense[]> => {
+  try {
+    const userId = getUserId();
+    const expensesRef = collection(
+      db,
+      'users',
+      userId,
+      RECURRING_EXPENSES_COLLECTION,
+    );
+    const snapshot = await getDocs(expensesRef);
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as RecurringExpense[];
+  } catch (error) {
+    console.error('Error getting recurring expenses:', error);
+    return [];
   }
 };
 
-export const deleteRecurringExpense = (id: string): void => {
-  const expenses = getRecurringExpenses();
-  const filtered = expenses.filter((e) => e.id !== id);
-  saveRecurringExpenses(filtered);
+export const createRecurringExpense = async (
+  expense: RecurringExpense,
+): Promise<void> => {
+  try {
+    const userId = getUserId();
+    const expensesRef = collection(
+      db,
+      'users',
+      userId,
+      RECURRING_EXPENSES_COLLECTION,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...expenseData } = expense;
+    await addDoc(expensesRef, expenseData);
+  } catch (error) {
+    console.error('Error creating recurring expense:', error);
+    throw error;
+  }
+};
+
+export const updateRecurringExpense = async (
+  expense: RecurringExpense,
+): Promise<void> => {
+  try {
+    const userId = getUserId();
+    const expenseRef = doc(
+      db,
+      'users',
+      userId,
+      RECURRING_EXPENSES_COLLECTION,
+      expense.id,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...expenseData } = expense;
+    await updateDoc(expenseRef, expenseData);
+  } catch (error) {
+    console.error('Error updating recurring expense:', error);
+    throw error;
+  }
+};
+
+export const deleteRecurringExpense = async (id: string): Promise<void> => {
+  try {
+    const userId = getUserId();
+    const expenseRef = doc(
+      db,
+      'users',
+      userId,
+      RECURRING_EXPENSES_COLLECTION,
+      id,
+    );
+    await deleteDoc(expenseRef);
+  } catch (error) {
+    console.error('Error deleting recurring expense:', error);
+    throw error;
+  }
+};
+
+// Migration helper - copy data from localStorage to Firebase
+export const migrateFromLocalStorage = async (): Promise<void> => {
+  try {
+    // Get data from localStorage
+    const budgetsData = localStorage.getItem('budgets');
+    const expensesData = localStorage.getItem('recurringExpenses');
+
+    if (budgetsData) {
+      const budgets = JSON.parse(budgetsData) as Budget[];
+      for (const budget of budgets) {
+        await createBudget(budget);
+      }
+      console.log(`Migrated ${budgets.length} budgets`);
+    }
+
+    if (expensesData) {
+      const expenses = JSON.parse(expensesData) as RecurringExpense[];
+      for (const expense of expenses) {
+        await createRecurringExpense(expense);
+      }
+      console.log(`Migrated ${expenses.length} recurring expenses`);
+    }
+
+    console.log('Migration complete!');
+  } catch (error) {
+    console.error('Error during migration:', error);
+    throw error;
+  }
 };

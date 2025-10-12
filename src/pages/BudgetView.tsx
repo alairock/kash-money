@@ -10,24 +10,28 @@ export const BudgetView = () => {
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editingStartingAmount, setEditingStartingAmount] = useState(false);
 	const [startingAmountValue, setStartingAmountValue] = useState('0');
+	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		if (!id) return;
+		const loadBudget = async () => {
+			if (!id) return;
 
-		const loadedBudget = getBudget(id);
-		if (!loadedBudget) {
-			navigate('/budgets');
-			return;
-		}
+			const loadedBudget = await getBudget(id);
+			if (!loadedBudget) {
+				navigate('/budgets');
+				return;
+			}
 
-		// Update state with loaded budget data
-		// eslint-disable-next-line @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
-		setBudget(loadedBudget);
-		// eslint-disable-next-line @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
-		setStartingAmountValue(loadedBudget.startingAmount.toString());
+			// Update state with loaded budget data
+			setBudget(loadedBudget);
+			setStartingAmountValue(loadedBudget.startingAmount.toString());
+			setLoading(false);
+		};
+
+		loadBudget();
 	}, [id, navigate]);
 
-	const handleAddAdHoc = () => {
+	const handleAddAdHoc = async () => {
 		if (!budget) return;
 
 		const newItem: BudgetLineItem = {
@@ -44,12 +48,12 @@ export const BudgetView = () => {
 			lineItems: [...budget.lineItems, newItem],
 		};
 
-		updateBudget(updatedBudget);
+		await updateBudget(updatedBudget);
 		setBudget(updatedBudget);
 		setEditingId(newItem.id);
 	};
 
-	const handleDeleteItem = (itemId: string) => {
+	const handleDeleteItem = async (itemId: string) => {
 		if (!budget) return;
 
 		const updatedBudget = {
@@ -57,11 +61,11 @@ export const BudgetView = () => {
 			lineItems: budget.lineItems.filter(item => item.id !== itemId),
 		};
 
-		updateBudget(updatedBudget);
+		await updateBudget(updatedBudget);
 		setBudget(updatedBudget);
 	};
 
-	const handleUpdateItem = (itemId: string, updates: Partial<BudgetLineItem>) => {
+	const handleUpdateItem = async (itemId: string, updates: Partial<BudgetLineItem>) => {
 		if (!budget) return;
 
 		const updatedBudget = {
@@ -71,11 +75,11 @@ export const BudgetView = () => {
 			),
 		};
 
-		updateBudget(updatedBudget);
+		await updateBudget(updatedBudget);
 		setBudget(updatedBudget);
 	};
 
-	const handleReorderItems = (dragIndex: number, dropIndex: number) => {
+	const handleReorderItems = async (dragIndex: number, dropIndex: number) => {
 		if (!budget) return;
 
 		const items = [...budget.lineItems];
@@ -87,11 +91,11 @@ export const BudgetView = () => {
 			lineItems: items,
 		};
 
-		updateBudget(updatedBudget);
+		await updateBudget(updatedBudget);
 		setBudget(updatedBudget);
 	};
 
-	const handleUpdateStartingAmount = () => {
+	const handleUpdateStartingAmount = async () => {
 		if (!budget) return;
 
 		const amount = parseFloat(startingAmountValue);
@@ -105,7 +109,7 @@ export const BudgetView = () => {
 			startingAmount: amount,
 		};
 
-		updateBudget(updatedBudget);
+		await updateBudget(updatedBudget);
 		setBudget(updatedBudget);
 		setEditingStartingAmount(false);
 	};
@@ -127,8 +131,14 @@ export const BudgetView = () => {
 		};
 	};
 
-	if (!budget) {
-		return <div className="p-6">Loading...</div>;
+	if (loading || !budget) {
+		return (
+			<div className="mx-auto max-w-6xl p-6">
+				<div className="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center">
+					<p className="text-gray-400">Loading budget...</p>
+				</div>
+			</div>
+		);
 	}
 
 	const totals = calculateTotals();

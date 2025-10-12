@@ -9,20 +9,26 @@ export const Budgets = () => {
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [newBudgetName, setNewBudgetName] = useState('');
 	const [startingAmount, setStartingAmount] = useState('0');
+	const [loading, setLoading] = useState(true);
 
-	const loadBudgets = useCallback(() => {
-		const loadedBudgets = getBudgets();
-		// Sort by date descending (newest first)
-		loadedBudgets.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime());
-		// eslint-disable-next-line @eslint-react/hooks-extra/no-direct-set-state-in-use-effect
-		setBudgets(loadedBudgets);
+	const loadBudgets = useCallback(async () => {
+		try {
+			const loadedBudgets = await getBudgets();
+			// Sort by date descending (newest first)
+			loadedBudgets.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime());
+			setBudgets(loadedBudgets);
+		} catch (error) {
+			console.error('Error loading budgets:', error);
+		} finally {
+			setLoading(false);
+		}
 	}, []);
 
 	useEffect(() => {
 		loadBudgets();
 	}, [loadBudgets]);
 
-	const handleCreateBudget = () => {
+	const handleCreateBudget = async () => {
 		const amount = parseFloat(startingAmount);
 		if (isNaN(amount)) {
 			alert('Please enter a valid starting amount');
@@ -33,7 +39,7 @@ export const Budgets = () => {
 		const budgetName = newBudgetName.trim() || new Date().toISOString().split('T')[0];
 
 		// Automatically add recurring expenses as line items
-		const recurringExpenses = getRecurringExpenses();
+		const recurringExpenses = await getRecurringExpenses();
 		const lineItems: BudgetLineItem[] = recurringExpenses.map(expense => {
 			// Determine initial status based on conditions
 			let status: 'incomplete' | 'complete' | 'automatic';
@@ -65,7 +71,7 @@ export const Budgets = () => {
 			lineItems,
 		};
 
-		createBudget(newBudget);
+		await createBudget(newBudget);
 		setShowCreateModal(false);
 		setNewBudgetName('');
 		setStartingAmount('0');
@@ -74,9 +80,9 @@ export const Budgets = () => {
 		navigate(`/budgets/${newBudget.id}`);
 	};
 
-	const handleDelete = (id: string) => {
+	const handleDelete = async (id: string) => {
 		if (confirm('Are you sure you want to delete this budget?')) {
-			deleteBudget(id);
+			await deleteBudget(id);
 			loadBudgets();
 		}
 	};
@@ -102,7 +108,11 @@ export const Budgets = () => {
 				</button>
 			</div>
 
-			{budgets.length === 0 ? (
+			{loading ? (
+				<div className="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center">
+					<p className="text-gray-400">Loading budgets...</p>
+				</div>
+			) : budgets.length === 0 ? (
 				<div className="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center">
 					<p className="text-gray-400">No budgets yet. Create your first budget to get started!</p>
 				</div>
