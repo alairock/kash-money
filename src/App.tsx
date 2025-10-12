@@ -13,7 +13,7 @@ import { NotFound } from './pages/NotFound';
 export const App = () => {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen text-white">
         <Nav />
         <Routes>
           <Route path="/" element={<Navigate to="/budgets" replace />} />

@@ -70,48 +70,48 @@ export const Config = () => {
 
 	return (
 		<div className="mx-auto max-w-6xl p-6">
-			<div className="mb-6 flex items-center justify-between">
-				<h1 className="text-3xl font-bold">Configuration</h1>
+			<div className="mb-8 flex items-center justify-between">
+				<h1 className="text-4xl font-black text-shadow-glow">⚙️ Configuration</h1>
 				<button
 					type="button"
 					onClick={handleAddExpense}
-					className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+					className="gradient-success rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl"
 				>
-					Add Recurring Expense
+					➕ Add Recurring Expense
 				</button>
 			</div>
 
-			<div className="rounded-lg border border-gray-700 bg-gray-800 p-6">
-				<h2 className="mb-4 text-xl font-semibold">Recurring Bills/Expenses</h2>
-				<p className="mb-4 text-sm text-gray-400">
+			<div className="glass-effect rounded-2xl p-6 shadow-xl">
+				<h2 className="mb-4 text-2xl font-bold">💸 Recurring Bills/Expenses</h2>
+				<p className="mb-6 text-sm text-white/80">
 					These expenses will be copied into new budgets. You can edit the values in individual budgets without
 					affecting these defaults.
 				</p>
 
 				<div className="overflow-x-auto">
 					<table className="w-full">
-						<thead className="border-b border-gray-700">
+						<thead className="border-b-2 border-white/20">
 							<tr>
-								<th className="px-2 py-3 text-left text-sm font-medium w-8"></th>
-								<th className="px-4 py-3 text-left text-sm font-medium">Name</th>
-								<th className="px-4 py-3 text-left text-sm font-medium">Estimated Amount</th>
-								<th className="px-4 py-3 text-left text-sm font-medium">Automatic</th>
-								<th className="px-4 py-3 text-left text-sm font-medium">Link</th>
-								<th className="px-4 py-3 text-left text-sm font-medium">Note</th>
-								<th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
+								<th className="px-2 py-3 text-left text-sm font-bold w-8"></th>
+								<th className="px-4 py-3 text-left text-sm font-bold">Name</th>
+								<th className="px-4 py-3 text-left text-sm font-bold">Estimated Amount</th>
+								<th className="px-4 py-3 text-left text-sm font-bold">Automatic</th>
+								<th className="px-4 py-3 text-left text-sm font-bold">Link</th>
+								<th className="px-4 py-3 text-left text-sm font-bold">Note</th>
+								<th className="px-4 py-3 text-left text-sm font-bold">Actions</th>
 							</tr>
 						</thead>
 						<tbody>
 							{loading ? (
 								<tr>
-									<td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+									<td colSpan={7} className="px-4 py-8 text-center text-white/70">
 										Loading expenses...
 									</td>
 								</tr>
 							) : expenses.length === 0 ? (
 								<tr>
-									<td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-										No recurring expenses yet. Add one to get started!
+									<td colSpan={7} className="px-4 py-8 text-center text-white/70">
+										No recurring expenses yet. Add one to get started! 🚀
 									</td>
 								</tr>
 							) : (
@@ -219,13 +219,13 @@ const RecurringExpenseRow = ({
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onDrop={handleDrop}
-				className={`border-b border-gray-700 bg-gray-750 ${dragOver ? 'border-t-4 border-t-blue-500' : ''}`}
+				className={`border-b border-white/10 bg-white/10 backdrop-blur-sm ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
 			>
 				<td className="px-2 py-2">
 					<div
 						draggable
 						onDragStart={handleDragStart}
-						className="cursor-move text-gray-400 hover:text-gray-200"
+						className="cursor-move text-white/50 hover:text-white"
 						title="Drag to reorder"
 					>
 						<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
@@ -238,7 +238,7 @@ const RecurringExpenseRow = ({
 						type="text"
 						value={editValues.name}
 						onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 						autoFocus
 					/>
 				</td>
@@ -248,7 +248,7 @@ const RecurringExpenseRow = ({
 						step="0.01"
 						value={editValues.amount}
 						onChange={(e) => setEditValues({ ...editValues, amount: e.target.value })}
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 					/>
 				</td>
 				<td className="px-4 py-2">
@@ -264,7 +264,7 @@ const RecurringExpenseRow = ({
 						type="text"
 						value={editValues.link}
 						onChange={(e) => setEditValues({ ...editValues, link: e.target.value })}
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 						placeholder="http://..."
 					/>
 				</td>
@@ -273,7 +273,7 @@ const RecurringExpenseRow = ({
 						type="text"
 						value={editValues.note}
 						onChange={(e) => setEditValues({ ...editValues, note: e.target.value })}
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 					/>
 				</td>
 				<td className="px-4 py-2">
@@ -281,7 +281,7 @@ const RecurringExpenseRow = ({
 						<button
 							type="button"
 							onClick={handleSave}
-							className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700"
+							className="gradient-success rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
 						>
 							Save
 						</button>
@@ -297,7 +297,7 @@ const RecurringExpenseRow = ({
 								});
 								onSave();
 							}}
-							className="rounded bg-gray-600 px-2 py-1 text-xs text-white hover:bg-gray-700"
+							className="rounded-lg bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30"
 						>
 							Cancel
 						</button>
@@ -312,13 +312,13 @@ const RecurringExpenseRow = ({
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
-			className={`border-b border-gray-700 hover:bg-gray-750 ${dragOver ? 'border-t-4 border-t-blue-500' : ''}`}
+			className={`border-b border-white/10 transition-all hover:bg-white/5 ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
 		>
 			<td className="px-2 py-2">
 				<div
 					draggable
 					onDragStart={handleDragStart}
-					className="cursor-move text-gray-400 hover:text-gray-200"
+					className="cursor-move text-white/50 hover:text-white"
 					title="Drag to reorder"
 				>
 					<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
@@ -326,8 +326,16 @@ const RecurringExpenseRow = ({
 					</svg>
 				</div>
 			</td>
-			<td className="px-4 py-2">{expense.name}</td>
-			<td className="px-4 py-2 font-medium">${expense.amount.toFixed(2)}</td>
+			<td className="px-4 py-2 font-semibold">{expense.name}</td>
+			<td className={`px-4 py-2 font-bold ${
+				expense.amount > 0 
+					? 'text-green-300' 
+					: expense.amount < 0 
+					? 'text-red-300' 
+					: 'text-white/80'
+			}`}>
+				${expense.amount.toFixed(2)}
+			</td>
 			<td className="px-4 py-2">
 				<input
 					type="checkbox"
@@ -338,27 +346,27 @@ const RecurringExpenseRow = ({
 			</td>
 			<td className="px-4 py-2">
 				{expense.link ? (
-					<a href={expense.link} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-						Link
+					<a href={expense.link} target="_blank" rel="noopener noreferrer" className="text-cyan-300 hover:text-cyan-100 hover:underline">
+						🔗 Link
 					</a>
 				) : (
-					<span className="text-gray-600">—</span>
+					<span className="text-white/40">—</span>
 				)}
 			</td>
-			<td className="px-4 py-2 text-sm text-gray-400">{expense.note || '—'}</td>
+			<td className="px-4 py-2 text-sm text-white/80">{expense.note || '—'}</td>
 			<td className="px-4 py-2">
 				<div className="flex gap-1">
 					<button
 						type="button"
 						onClick={onEdit}
-						className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+						className="gradient-primary rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
 					>
 						Edit
 					</button>
 					<button
 						type="button"
 						onClick={() => onDelete(expense.id)}
-						className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+						className="gradient-secondary rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
 					>
 						Delete
 					</button>

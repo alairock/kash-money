@@ -8,7 +8,7 @@ export const Nav = () => {
 	const navigate = useNavigate();
 
 	const linkClass = ({ isActive }: { isActive: boolean }) =>
-		`px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-800'}`;
+		`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive ? 'glass-effect text-white shadow-lg' : 'text-white/80 hover:text-white hover:glass-dark'}`;
 
 	const handleLogout = async () => {
 		try {
@@ -20,16 +20,19 @@ export const Nav = () => {
 	};
 
 	return (
-		<nav className="w-full bg-gray-800 p-4">
-			<div className="mx-auto flex max-w-4xl items-center justify-between">
-				<div className="flex items-center gap-4">
+		<nav className="w-full glass-dark p-4 shadow-xl">
+			<div className="mx-auto flex max-w-6xl items-center justify-between">
+				<div className="flex items-center gap-6">
+					<h1 className="text-2xl font-black text-shadow-glow">
+						KashMoney🤑
+					</h1>
 					{currentUser && (
 						<>
 							<NavLink to="/budgets" className={linkClass}>
-								Budgets
+								💰 Budgets
 							</NavLink>
 							<NavLink to="/config" className={linkClass}>
-								Config
+								⚙️ Config
 							</NavLink>
 						</>
 					)}
@@ -37,11 +40,11 @@ export const Nav = () => {
 				<div className="flex items-center gap-4">
 					{currentUser ? (
 						<>
-							<span className="text-sm text-gray-400">{currentUser.email}</span>
+							<span className="text-sm text-white/70">{currentUser.email}</span>
 							<button
 								type="button"
 								onClick={handleLogout}
-								className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800"
+								className="rounded-lg px-4 py-2 text-sm font-semibold text-white/80 transition-all hover:text-white hover:glass-dark"
 							>
 								Logout
 							</button>

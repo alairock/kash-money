@@ -29,24 +29,24 @@ export const ForgotPassword = () => {
 
 	return (
 		<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-			<div className="w-full max-w-md space-y-8">
+			<div className="glass-effect w-full max-w-md space-y-8 rounded-2xl p-8 shadow-2xl">
 				<div>
-					<h2 className="mt-6 text-center text-3xl font-bold tracking-tight">
-						Reset your password
+					<h2 className="mt-6 text-center text-4xl font-black text-shadow-glow">
+						Reset Password
 					</h2>
-					<p className="mt-2 text-center text-sm text-gray-400">
+					<p className="mt-2 text-center text-white/80">
 						Enter your email address and we'll send you a link to reset your password.
 					</p>
 				</div>
 				<form className="mt-8 space-y-6" onSubmit={handleSubmit}>
 					{error && (
-						<div className="rounded-md bg-red-900/50 p-4 text-sm text-red-200">
+						<div className="rounded-xl bg-red-500/20 p-4 text-sm font-semibold text-red-200 backdrop-blur-sm">
 							{error}
 						</div>
 					)}
 					{success && (
-						<div className="rounded-md bg-green-900/50 p-4 text-sm text-green-200">
-							Password reset email sent! Check your inbox for instructions.
+						<div className="rounded-xl bg-green-500/20 p-4 text-sm font-semibold text-green-200 backdrop-blur-sm">
+							Password reset email sent! Check your inbox for instructions. 📧
 						</div>
 					)}
 					<div>
@@ -59,7 +59,7 @@ export const ForgotPassword = () => {
 							type="email"
 							autoComplete="email"
 							required
-							className="relative block w-full rounded-md border-0 bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							className="relative block w-full rounded-xl border-2 border-white/20 bg-white/10 px-4 py-3 text-white placeholder-white/50 backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 							placeholder="Email address"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
@@ -70,14 +70,14 @@ export const ForgotPassword = () => {
 						<button
 							type="submit"
 							disabled={loading}
-							className="group relative flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50"
+							className="gradient-success group relative flex w-full justify-center rounded-xl px-4 py-3 text-base font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl disabled:opacity-50"
 						>
-							{loading ? 'Sending...' : 'Send reset link'}
+							{loading ? 'Sending...' : '📧 Send reset link'}
 						</button>
 
 						<div className="text-center text-sm">
-							<Link to="/login" className="font-medium text-blue-400 hover:text-blue-300">
-								Back to sign in
+							<Link to="/login" className="font-bold text-white hover:text-white/80">
+								← Back to sign in
 							</Link>
 						</div>
 					</div>

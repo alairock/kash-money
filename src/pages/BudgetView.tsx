@@ -134,8 +134,8 @@ export const BudgetView = () => {
 	if (loading || !budget) {
 		return (
 			<div className="mx-auto max-w-6xl p-6">
-				<div className="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center">
-					<p className="text-gray-400">Loading budget...</p>
+				<div className="glass-effect rounded-2xl p-12 text-center shadow-xl">
+					<p className="text-xl text-white/80">Loading budget...</p>
 				</div>
 			</div>
 		);
@@ -146,37 +146,37 @@ export const BudgetView = () => {
 	return (
 		<div className="mx-auto max-w-6xl p-6">
 			<div className="mb-6">
-				<Link to="/budgets" className="text-blue-400 hover:text-blue-300">
+				<Link to="/budgets" className="font-semibold text-white/80 transition-colors hover:text-white">
 					← Back to Budgets
 				</Link>
 			</div>
 
 			<div className="mb-6">
-				<h1 className="text-3xl font-bold">{budget.name}</h1>
-				<p className="text-gray-400">
-					Created: {new Date(budget.dateCreated).toLocaleDateString()}
+				<h1 className="text-4xl font-black text-shadow-glow">{budget.name}</h1>
+				<p className="text-white/70">
+					📅 Created: {new Date(budget.dateCreated).toLocaleDateString()}
 				</p>
 			</div>
 
 			{/* Starting Amount */}
-			<div className="mb-6 rounded-lg border border-gray-700 bg-gray-800 p-4">
+			<div className="glass-effect mb-6 rounded-2xl p-6 shadow-xl">
 				<div className="flex items-center justify-between">
 					<div>
-						<h2 className="text-sm font-medium text-gray-400">Starting Amount</h2>
+						<h2 className="text-sm font-bold uppercase tracking-wide text-white/70">Starting Amount</h2>
 						{editingStartingAmount ? (
-							<div className="mt-1 flex items-center gap-2">
+							<div className="mt-2 flex items-center gap-3">
 								<input
 									type="number"
 									step="0.01"
 									value={startingAmountValue}
 									onChange={(e) => setStartingAmountValue(e.target.value)}
-									className="w-32 rounded border border-gray-600 bg-gray-700 px-2 py-1 text-white"
+									className="w-40 rounded-xl border-2 border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 									autoFocus
 								/>
 								<button
 									type="button"
 									onClick={handleUpdateStartingAmount}
-									className="rounded bg-green-600 px-2 py-1 text-sm text-white hover:bg-green-700"
+									className="gradient-success rounded-lg px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
 								>
 									Save
 								</button>
@@ -186,61 +186,63 @@ export const BudgetView = () => {
 										setEditingStartingAmount(false);
 										setStartingAmountValue(budget.startingAmount.toString());
 									}}
-									className="rounded bg-gray-600 px-2 py-1 text-sm text-white hover:bg-gray-700"
+									className="rounded-lg bg-white/20 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30"
 								>
 									Cancel
 								</button>
 							</div>
 						) : (
-							<p className="mt-1 text-2xl font-bold">${budget.startingAmount.toFixed(2)}</p>
+							<p className="gradient-gold mt-2 inline-block rounded-xl px-4 py-2 text-3xl font-black text-purple-900 shadow-lg">
+								${budget.startingAmount.toFixed(2)}
+							</p>
 						)}
 					</div>
 					{!editingStartingAmount && (
 						<button
 							type="button"
 							onClick={() => setEditingStartingAmount(true)}
-							className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+							className="gradient-primary rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105"
 						>
-							Edit
+							✏️ Edit
 						</button>
 					)}
 				</div>
 			</div>
 
 			{/* Action Buttons */}
-			<div className="mb-4 flex gap-2">
+			<div className="mb-6 flex gap-3">
 				<button
 					type="button"
 					onClick={handleAddAdHoc}
-					className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+					className="gradient-success rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl"
 				>
-					Add Ad-hoc Item
+					➕ Add Ad-hoc Item
 				</button>
 			</div>
 
 			{/* Line Items Table */}
-			<div className="overflow-x-auto rounded-lg border border-gray-700 bg-gray-800">
+			<div className="glass-effect overflow-x-auto rounded-2xl shadow-xl">
 				<table className="w-full">
-					<thead className="border-b border-gray-700 bg-gray-750">
+					<thead className="border-b-2 border-white/20">
 						<tr>
-							<th className="px-2 py-3 text-left text-sm font-medium w-8"></th>
-							<th className={`px-4 py-3 text-left text-sm font-medium ${editingId ? '' : 'w-0 p-0 overflow-hidden'}`}>
+							<th className="px-2 py-3 text-left text-sm font-bold w-8"></th>
+							<th className={`px-4 py-3 text-left text-sm font-bold ${editingId ? '' : 'w-0 p-0 overflow-hidden'}`}>
 								{editingId && 'Marked'}
 							</th>
-							<th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-							<th className="px-4 py-3 text-left text-sm font-medium">Name</th>
-							<th className="px-4 py-3 text-left text-sm font-medium">Amount</th>
-							<th className="px-4 py-3 text-left text-sm font-medium">Link</th>
-							<th className="px-4 py-3 text-left text-sm font-medium">Note</th>
-							<th className="px-4 py-3 text-left text-sm font-medium">Type</th>
-							<th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
+							<th className="px-4 py-3 text-left text-sm font-bold">Status</th>
+							<th className="px-4 py-3 text-left text-sm font-bold">Name</th>
+							<th className="px-4 py-3 text-left text-sm font-bold">Amount</th>
+							<th className="px-4 py-3 text-left text-sm font-bold">Link</th>
+							<th className="px-4 py-3 text-left text-sm font-bold">Note</th>
+							<th className="px-4 py-3 text-left text-sm font-bold">Type</th>
+							<th className="px-4 py-3 text-left text-sm font-bold">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
 						{budget.lineItems.length === 0 ? (
 							<tr>
-								<td colSpan={9} className="px-4 py-8 text-center text-gray-400">
-									No items yet. Recurring expenses are added automatically when you create a budget. Add ad-hoc items as needed.
+								<td colSpan={9} className="px-4 py-12 text-center text-white/70">
+									No items yet. Recurring expenses are added automatically when you create a budget. Add ad-hoc items as needed. 🚀
 								</td>
 							</tr>
 						) : (
@@ -263,16 +265,18 @@ export const BudgetView = () => {
 			</div>
 
 			{/* Totals */}
-			<div className="mt-6 rounded-lg border border-gray-700 bg-gray-800 p-4">
-				<h2 className="mb-3 text-xl font-bold">Totals</h2>
-				<div className="space-y-2">
+			<div className="glass-effect mt-6 rounded-2xl p-6 shadow-xl">
+				<h2 className="mb-4 text-2xl font-black">📊 Totals</h2>
+				<div className="space-y-3">
 					<div className="flex justify-between">
-						<span className="text-gray-400">After Unmarked Items:</span>
-						<span className="text-xl font-semibold">${totals.unmarkedTotal.toFixed(2)}</span>
+						<span className="text-white/80">After Unmarked Items:</span>
+						<span className="text-2xl font-bold text-cyan-300">${totals.unmarkedTotal.toFixed(2)}</span>
 					</div>
-					<div className="flex justify-between border-t border-gray-700 pt-2">
-						<span className="text-gray-400">Final Total (After All Items):</span>
-						<span className="text-2xl font-bold">${totals.finalTotal.toFixed(2)}</span>
+					<div className="flex justify-between border-t-2 border-white/20 pt-3">
+						<span className="text-lg font-bold text-white/80">Final Total (After All Items):</span>
+						<span className="gradient-gold rounded-xl px-4 py-2 text-3xl font-black text-purple-900 shadow-lg">
+							${totals.finalTotal.toFixed(2)}
+						</span>
 					</div>
 				</div>
 			</div>
@@ -366,19 +370,19 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 		const isDimmed = item.status === 'automatic' || item.status === 'complete' || item.amount === 0;
 		const isIncompleteNegative = item.status === 'incomplete' && item.amount < 0;
 		const isPositive = item.amount > 0;
-		const bgClass = isIncompleteNegative ? 'bg-red-900/20' : isPositive ? 'bg-green-900/20' : 'bg-gray-750';
+		const bgClass = isIncompleteNegative ? 'bg-red-500/20' : isPositive ? 'bg-green-500/20' : 'bg-white/10';
 		return (
 			<tr
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onDrop={handleDrop}
-				className={`border-b border-gray-700 ${isDimmed ? 'opacity-50' : ''} ${bgClass} ${dragOver ? 'border-t-4 border-t-blue-500' : ''}`}
+				className={`border-b border-white/10 ${isDimmed ? 'opacity-50' : ''} ${bgClass} backdrop-blur-sm ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
 			>
 				<td className="px-2 py-2">
 					<div
 						draggable
 						onDragStart={handleDragStart}
-						className="cursor-move text-gray-400 hover:text-gray-200"
+						className="cursor-move text-white/50 hover:text-white"
 						title="Drag to reorder"
 					>
 						<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
@@ -398,7 +402,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 					<select
 						value={editValues.status}
 						onChange={(e) => setEditValues({ ...editValues, status: e.target.value as 'incomplete' | 'complete' | 'automatic' })}
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 					>
 						<option value="incomplete">Incomplete</option>
 						<option value="complete">Complete</option>
@@ -410,7 +414,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 						type="text"
 						value={editValues.name}
 						onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 					/>
 				</td>
 				<td className="px-4 py-2">
@@ -419,7 +423,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 						inputMode="decimal"
 						value={editValues.amount}
 						onChange={(e) => setEditValues({ ...editValues, amount: e.target.value })}
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 						placeholder="0.00"
 					/>
 				</td>
@@ -428,7 +432,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 						type="text"
 						value={editValues.link}
 						onChange={(e) => setEditValues({ ...editValues, link: e.target.value })}
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 						placeholder="http://..."
 					/>
 				</td>
@@ -437,18 +441,18 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 						type="text"
 						value={editValues.note}
 						onChange={(e) => setEditValues({ ...editValues, note: e.target.value })}
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 					/>
 				</td>
 				<td className="px-4 py-2">
-					<span className="text-xs text-gray-400">{item.isRecurring ? 'Recurring' : 'Ad-hoc'}</span>
+					<span className="text-xs text-white/70">{item.isRecurring ? 'Recurring' : 'Ad-hoc'}</span>
 				</td>
 				<td className="px-4 py-2">
 					<div className="flex gap-1">
 						<button
 							type="button"
 							onClick={handleSave}
-							className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700"
+							className="gradient-success rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
 						>
 							Save
 						</button>
@@ -464,7 +468,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 								});
 								onSave();
 							}}
-							className="rounded bg-gray-600 px-2 py-1 text-xs text-white hover:bg-gray-700"
+							className="rounded-lg bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30"
 						>
 							Cancel
 						</button>
@@ -477,7 +481,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 	const isDimmed = item.status === 'automatic' || item.status === 'complete' || item.amount === 0;
 	const isIncompleteNegative = item.status === 'incomplete' && item.amount < 0;
 	const isPositive = item.amount > 0;
-	const bgClass = isIncompleteNegative ? 'bg-red-900/20 hover:bg-red-900/30' : isPositive ? 'bg-green-900/20 hover:bg-green-900/30' : 'hover:bg-gray-750';
+	const bgClass = isIncompleteNegative ? 'bg-red-500/20 hover:bg-red-500/30' : isPositive ? 'bg-green-500/20 hover:bg-green-500/30' : 'hover:bg-white/5';
 
 	const statusDisplay = item.status.charAt(0).toUpperCase() + item.status.slice(1);
 
@@ -486,13 +490,13 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
-			className={`border-b border-gray-700 ${isDimmed ? 'opacity-50' : ''} ${bgClass} ${dragOver ? 'border-t-4 border-t-blue-500' : ''}`}
+			className={`border-b border-white/10 transition-all ${isDimmed ? 'opacity-50' : ''} ${bgClass} ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
 		>
 			<td className="px-2 py-2">
 				<div
 					draggable
 					onDragStart={handleDragStart}
-					className="cursor-move text-gray-400 hover:text-gray-200"
+					className="cursor-move text-white/50 hover:text-white"
 					title="Drag to reorder"
 				>
 					<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
@@ -513,7 +517,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 						}}
 						onBlur={() => setEditingField(null)}
 						autoFocus
-						className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-white"
+						className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-2 py-1 text-xs text-white backdrop-blur-sm"
 					>
 						<option value="incomplete">Incomplete</option>
 						<option value="complete">Complete</option>
@@ -522,14 +526,14 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 				) : (
 					<span
 						onClick={() => setEditingField('status')}
-						className="cursor-pointer hover:text-blue-400"
+						className="cursor-pointer font-semibold hover:text-cyan-300"
 					>
 						{statusDisplay}
 					</span>
 				)}
 			</td>
-			<td className="px-4 py-2">{item.name}</td>
-			<td className="px-4 py-2 font-medium">
+			<td className="px-4 py-2 font-semibold">{item.name}</td>
+			<td className="px-4 py-2 font-bold">
 				{editingField === 'amount' ? (
 					<input
 						type="text"
@@ -541,7 +545,7 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 							setEditingField(null);
 						}}
 						autoFocus
-						className="w-24 rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white"
+						className="w-24 rounded-lg border-2 border-white/20 bg-white/10 px-2 py-1 text-sm text-white backdrop-blur-sm"
 						placeholder="0.00"
 					/>
 				) : (
@@ -550,7 +554,13 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 							setInlineAmount(item.amount.toString());
 							setEditingField('amount');
 						}}
-						className="cursor-pointer hover:text-blue-400"
+						className={`cursor-pointer ${
+							item.amount > 0 
+								? 'text-green-300 hover:text-green-100' 
+								: item.amount < 0 
+								? 'text-red-300 hover:text-red-100' 
+								: 'text-white/80 hover:text-white'
+						}`}
 					>
 						${item.amount.toFixed(2)}
 					</span>
@@ -558,30 +568,30 @@ const LineItemRow = ({ item, index, isEditing, onEdit, onSave, onUpdate, onDelet
 			</td>
 			<td className="px-4 py-2">
 				{item.link ? (
-					<a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-						Link
+					<a href={item.link} target="_blank" rel="noopener noreferrer" className="text-cyan-300 hover:text-cyan-100 hover:underline">
+						🔗 Link
 					</a>
 				) : (
-					<span className="text-gray-600">—</span>
+					<span className="text-white/40">—</span>
 				)}
 			</td>
-			<td className="px-4 py-2 text-sm text-gray-400">{item.note || '—'}</td>
+			<td className="px-4 py-2 text-sm text-white/80">{item.note || '—'}</td>
 			<td className="px-4 py-2">
-				<span className="text-xs text-gray-400">{item.isRecurring ? 'Recurring' : 'Ad-hoc'}</span>
+				<span className="text-xs text-white/70">{item.isRecurring ? 'Recurring' : 'Ad-hoc'}</span>
 			</td>
 			<td className="px-4 py-2">
 				<div className="flex gap-1">
 					<button
 						type="button"
 						onClick={onEdit}
-						className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+						className="gradient-primary rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
 					>
 						Edit
 					</button>
 					<button
 						type="button"
 						onClick={() => onDelete(item.id)}
-						className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+						className="gradient-secondary rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
 					>
 						Delete
 					</button>

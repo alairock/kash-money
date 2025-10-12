@@ -43,15 +43,16 @@ export const Login = () => {
 
 	return (
 		<div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-			<div className="w-full max-w-md space-y-8">
+			<div className="glass-effect w-full max-w-md space-y-8 rounded-2xl p-8 shadow-2xl">
 				<div>
-					<h2 className="mt-6 text-center text-3xl font-bold tracking-tight">
-						Sign in to your account
+					<h2 className="mt-6 text-center text-4xl font-black text-shadow-glow">
+						Welcome to KashMoney🤑
 					</h2>
+					<p className="mt-2 text-center text-white/70">Sign in to manage your budgets</p>
 				</div>
 				<form className="mt-8 space-y-6" onSubmit={handleEmailLogin}>
 					{error && (
-						<div className="rounded-md bg-red-900/50 p-4 text-sm text-red-200">
+						<div className="rounded-xl bg-red-500/20 p-4 text-sm font-semibold text-red-200 backdrop-blur-sm">
 							{error}
 						</div>
 					)}
@@ -66,7 +67,7 @@ export const Login = () => {
 								type="email"
 								autoComplete="email"
 								required
-								className="relative block w-full rounded-md border-0 bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								className="relative block w-full rounded-xl border-2 border-white/20 bg-white/10 px-4 py-3 text-white placeholder-white/50 backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 								placeholder="Email address"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
@@ -82,7 +83,7 @@ export const Login = () => {
 								type="password"
 								autoComplete="current-password"
 								required
-								className="relative block w-full rounded-md border-0 bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								className="relative block w-full rounded-xl border-2 border-white/20 bg-white/10 px-4 py-3 text-white placeholder-white/50 backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
 								placeholder="Password"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
@@ -94,7 +95,7 @@ export const Login = () => {
 						<div className="text-sm">
 							<Link
 								to="/forgot-password"
-								className="font-medium text-blue-400 hover:text-blue-300"
+								className="font-semibold text-white/80 hover:text-white"
 							>
 								Forgot your password?
 							</Link>
@@ -105,17 +106,17 @@ export const Login = () => {
 						<button
 							type="submit"
 							disabled={loading}
-							className="group relative flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50"
+							className="gradient-success group relative flex w-full justify-center rounded-xl px-4 py-3 text-base font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl disabled:opacity-50"
 						>
-							{loading ? 'Signing in...' : 'Sign in'}
+							{loading ? 'Signing in...' : '🚀 Sign in'}
 						</button>
 
 						<div className="relative">
 							<div className="absolute inset-0 flex items-center">
-								<div className="w-full border-t border-gray-700"></div>
+								<div className="w-full border-t border-white/20"></div>
 							</div>
 							<div className="relative flex justify-center text-sm">
-								<span className="bg-gray-900 px-2 text-gray-400">Or continue with</span>
+								<span className="bg-transparent px-2 text-white/70">Or continue with</span>
 							</div>
 						</div>
 
@@ -123,7 +124,7 @@ export const Login = () => {
 							type="button"
 							onClick={handleGoogleLogin}
 							disabled={loading}
-							className="group relative flex w-full justify-center rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600 disabled:opacity-50"
+							className="group relative flex w-full justify-center rounded-xl border-2 border-white/20 bg-white/10 px-4 py-3 text-base font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:opacity-50"
 						>
 							<svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
 								<path
@@ -148,8 +149,8 @@ export const Login = () => {
 					</div>
 
 					<div className="text-center text-sm">
-						<span className="text-gray-400">Don't have an account? </span>
-						<Link to="/signup" className="font-medium text-blue-400 hover:text-blue-300">
+						<span className="text-white/70">Don't have an account? </span>
+						<Link to="/signup" className="font-bold text-white hover:text-white/80">
 							Sign up
 						</Link>
 					</div>
