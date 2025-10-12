@@ -353,26 +353,47 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 	});
 	const [inlineAmount, setInlineAmount] = useState(item.amount.toString());
 	const [editingField, setEditingField] = useState<'status' | 'amount' | null>(null);
-	const [dragOver, setDragOver] = useState(false);
+	const [dragOver, setDragOver] = useState<'top' | 'bottom' | null>(null);
+	const [isDragging, setIsDragging] = useState(false);
 
 	const handleDragStart = (e: React.DragEvent) => {
 		e.dataTransfer.effectAllowed = 'move';
 		e.dataTransfer.setData('text/plain', index.toString());
+		setIsDragging(true);
+		// Add a custom drag image to make it more obvious
+		const dragImage = (e.target as HTMLElement).closest('tr');
+		if (dragImage) {
+			e.dataTransfer.setDragImage(dragImage, 20, 20);
+		}
+	};
+
+	const handleDragEnd = () => {
+		setIsDragging(false);
 	};
 
 	const handleDragOver = (e: React.DragEvent) => {
 		e.preventDefault();
 		e.dataTransfer.dropEffect = 'move';
-		setDragOver(true);
+
+		// Determine if dragging from above or below based on the source index
+		const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+
+		// If dragging from above (smaller index), show indicator at bottom
+		// If dragging from below (larger index), show indicator at top
+		if (dragIndex < index) {
+			setDragOver('bottom');
+		} else if (dragIndex > index) {
+			setDragOver('top');
+		}
 	};
 
 	const handleDragLeave = () => {
-		setDragOver(false);
+		setDragOver(null);
 	};
 
 	const handleDrop = (e: React.DragEvent) => {
 		e.preventDefault();
-		setDragOver(false);
+		setDragOver(null);
 		const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
 		if (dragIndex !== index) {
 			onReorder(dragIndex, index);
@@ -426,13 +447,17 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onDrop={handleDrop}
-				className={`border-b border-white/10 ${bgClass} backdrop-blur-sm ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
+				onDragEnd={handleDragEnd}
+				className={`border-b border-white/10 ${bgClass} backdrop-blur-sm transition-all ${isDragging ? 'opacity-40 scale-95' : ''
+					} ${dragOver === 'top' ? 'border-t-4 border-t-cyan-400 bg-cyan-500/20 shadow-lg shadow-cyan-500/50' : ''
+					} ${dragOver === 'bottom' ? 'border-b-4 border-b-cyan-400 bg-cyan-500/20 shadow-lg shadow-cyan-500/50' : ''
+					}`}
 			>
 				<td className={`px-2 py-2 ${cellOpacity}`}>
 					<div
 						draggable
 						onDragStart={handleDragStart}
-						className="cursor-move text-white/50 hover:text-white"
+						className="cursor-move text-white/50 hover:text-white transition-colors"
 						title="Drag to reorder"
 					>
 						<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
@@ -542,13 +567,17 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
-			className={`border-b border-white/10 transition-all ${bgClass} ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
+			onDragEnd={handleDragEnd}
+			className={`border-b border-white/10 transition-all ${bgClass} ${isDragging ? 'opacity-40 scale-95' : ''
+				} ${dragOver === 'top' ? 'border-t-4 border-t-cyan-400 bg-cyan-500/20 shadow-lg shadow-cyan-500/50' : ''
+				} ${dragOver === 'bottom' ? 'border-b-4 border-b-cyan-400 bg-cyan-500/20 shadow-lg shadow-cyan-500/50' : ''
+				}`}
 		>
 			<td className={`px-2 py-2 ${cellOpacity}`}>
 				<div
 					draggable
 					onDragStart={handleDragStart}
-					className="cursor-move text-white/50 hover:text-white"
+					className="cursor-move text-white/50 hover:text-white transition-colors"
 					title="Drag to reorder"
 				>
 					<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
@@ -578,9 +607,12 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 				) : (
 					<span
 						onClick={() => setEditingField('status')}
-						className="cursor-pointer font-semibold hover:text-cyan-300"
+						className="cursor-pointer font-semibold hover:text-cyan-300 inline-flex items-center gap-1"
 					>
 						{statusDisplay}
+						<svg className="w-3 h-3 opacity-50" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+						</svg>
 					</span>
 				)}
 			</td>
@@ -606,7 +638,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 							setInlineAmount(item.amount.toString());
 							setEditingField('amount');
 						}}
-						className={`cursor-pointer ${item.amount > 0
+						className={`cursor-pointer inline-flex items-center gap-1 ${item.amount > 0
 							? 'text-green-300 hover:text-green-100'
 							: item.amount < 0
 								? 'text-red-300 hover:text-red-100'
@@ -614,6 +646,9 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 							}`}
 					>
 						{formatCurrency(item.amount)}
+						<svg className="w-3 h-3 opacity-50" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+						</svg>
 					</span>
 				)}
 			</td>

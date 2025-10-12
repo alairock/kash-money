@@ -4,6 +4,7 @@ import {
   getDocs,
   getDoc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -104,10 +105,17 @@ export const getRecurringExpenses = async (): Promise<RecurringExpense[]> => {
       RECURRING_EXPENSES_COLLECTION,
     );
     const snapshot = await getDocs(expensesRef);
-    return snapshot.docs.map((doc) => ({
+    const expenses = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as RecurringExpense[];
+
+    // Sort by order field, with fallback for items without order
+    return expenses.sort((a, b) => {
+      const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+      return orderA - orderB;
+    });
   } catch (error) {
     console.error('Error getting recurring expenses:', error);
     return [];
@@ -119,15 +127,16 @@ export const createRecurringExpense = async (
 ): Promise<void> => {
   try {
     const userId = getUserId();
-    const expensesRef = collection(
+    const expenseRef = doc(
       db,
       'users',
       userId,
       RECURRING_EXPENSES_COLLECTION,
+      expense.id,
     );
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...expenseData } = expense;
-    await addDoc(expensesRef, expenseData);
+    await setDoc(expenseRef, expenseData);
   } catch (error) {
     console.error('Error creating recurring expense:', error);
     throw error;

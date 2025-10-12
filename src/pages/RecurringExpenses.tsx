@@ -8,15 +8,34 @@ import {
 } from '../utils/storage';
 import { formatCurrency } from '../utils/formatCurrency';
 
-export const Config = () => {
+export const RecurringExpenses = () => {
 	const [expenses, setExpenses] = useState<RecurringExpense[]>([]);
 	const [editingId, setEditingId] = useState<string | null>(null);
+	const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	const loadExpenses = useCallback(async () => {
 		try {
 			const loadedExpenses = await getRecurringExpenses();
-			setExpenses(loadedExpenses);
+
+			// Migrate any expenses without order field
+			let needsUpdate = false;
+			const migratedExpenses = loadedExpenses.map((expense, index) => {
+				if (expense.order === undefined) {
+					needsUpdate = true;
+					return { ...expense, order: index };
+				}
+				return expense;
+			});
+
+			// Save migrated expenses back to storage
+			if (needsUpdate) {
+				for (const expense of migratedExpenses) {
+					await updateRecurringExpense(expense);
+				}
+			}
+
+			setExpenses(migratedExpenses);
 		} catch (error) {
 			console.error('Error loading expenses:', error);
 		} finally {
@@ -34,11 +53,13 @@ export const Config = () => {
 			name: 'New Expense',
 			amount: 0,
 			isAutomatic: false,
+			order: expenses.length, // Add to end
 		};
 
 		await createRecurringExpense(newExpense);
 		setExpenses([...expenses, newExpense]);
 		setEditingId(newExpense.id);
+		setNewlyCreatedId(newExpense.id); // Mark this as newly created
 	};
 
 	const handleUpdateExpense = async (id: string, updates: Partial<RecurringExpense>) => {
@@ -57,14 +78,38 @@ export const Config = () => {
 		}
 	};
 
+	const handleCancelEdit = async (id: string) => {
+		// If this is a newly created expense that hasn't been saved yet, delete it
+		if (id === newlyCreatedId) {
+			await deleteRecurringExpense(id);
+			setExpenses(expenses.filter(e => e.id !== id));
+			setNewlyCreatedId(null);
+		}
+		// Close editing mode
+		setEditingId(null);
+	};
+
+	const handleSaveEdit = () => {
+		// Clear the newly created flag when saving
+		setNewlyCreatedId(null);
+		setEditingId(null);
+	};
+
 	const handleReorderExpenses = async (dragIndex: number, dropIndex: number) => {
 		const items = [...expenses];
 		const [draggedItem] = items.splice(dragIndex, 1);
 		items.splice(dropIndex, 0, draggedItem);
 
-		setExpenses(items);
-		// Update all expenses in storage to maintain order
-		for (const expense of items) {
+		// Update order property for all items based on their new position
+		const updatedItems = items.map((item, index) => ({
+			...item,
+			order: index,
+		}));
+
+		setExpenses(updatedItems);
+
+		// Save the new order to Firebase
+		for (const expense of updatedItems) {
 			await updateRecurringExpense(expense);
 		}
 	};
@@ -72,7 +117,7 @@ export const Config = () => {
 	return (
 		<div className="mx-auto max-w-6xl p-6">
 			<div className="mb-8 flex items-center justify-between">
-				<h1 className="text-4xl font-black text-shadow-glow">⚙️ Configuration</h1>
+				<h1 className="text-4xl font-black text-shadow-glow">💸 Recurring Expenses</h1>
 				<button
 					type="button"
 					onClick={handleAddExpense}
@@ -123,7 +168,8 @@ export const Config = () => {
 										index={index}
 										isEditing={editingId === expense.id}
 										onEdit={() => setEditingId(expense.id)}
-										onSave={() => setEditingId(null)}
+										onSave={handleSaveEdit}
+										onCancel={() => handleCancelEdit(expense.id)}
 										onUpdate={handleUpdateExpense}
 										onDelete={handleDeleteExpense}
 										onReorder={handleReorderExpenses}
@@ -144,6 +190,7 @@ interface RecurringExpenseRowProps {
 	isEditing: boolean;
 	onEdit: () => void;
 	onSave: () => void;
+	onCancel: () => void;
 	onUpdate: (id: string, updates: Partial<RecurringExpense>) => void;
 	onDelete: (id: string) => void;
 	onReorder: (dragIndex: number, dropIndex: number) => void;
@@ -155,6 +202,7 @@ const RecurringExpenseRow = ({
 	isEditing,
 	onEdit,
 	onSave,
+	onCancel,
 	onUpdate,
 	onDelete,
 	onReorder,
@@ -166,26 +214,47 @@ const RecurringExpenseRow = ({
 		note: expense.note || '',
 		isAutomatic: expense.isAutomatic || false,
 	});
-	const [dragOver, setDragOver] = useState(false);
+	const [dragOver, setDragOver] = useState<'top' | 'bottom' | null>(null);
+	const [isDragging, setIsDragging] = useState(false);
 
 	const handleDragStart = (e: React.DragEvent) => {
 		e.dataTransfer.effectAllowed = 'move';
 		e.dataTransfer.setData('text/plain', index.toString());
+		setIsDragging(true);
+		// Add a custom drag image to make it more obvious
+		const dragImage = (e.target as HTMLElement).closest('tr');
+		if (dragImage) {
+			e.dataTransfer.setDragImage(dragImage, 20, 20);
+		}
+	};
+
+	const handleDragEnd = () => {
+		setIsDragging(false);
 	};
 
 	const handleDragOver = (e: React.DragEvent) => {
 		e.preventDefault();
 		e.dataTransfer.dropEffect = 'move';
-		setDragOver(true);
+
+		// Determine if dragging from above or below based on the source index
+		const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+
+		// If dragging from above (smaller index), show indicator at bottom
+		// If dragging from below (larger index), show indicator at top
+		if (dragIndex < index) {
+			setDragOver('bottom');
+		} else if (dragIndex > index) {
+			setDragOver('top');
+		}
 	};
 
 	const handleDragLeave = () => {
-		setDragOver(false);
+		setDragOver(null);
 	};
 
 	const handleDrop = (e: React.DragEvent) => {
 		e.preventDefault();
-		setDragOver(false);
+		setDragOver(null);
 		const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
 		if (dragIndex !== index) {
 			onReorder(dragIndex, index);
@@ -220,13 +289,17 @@ const RecurringExpenseRow = ({
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onDrop={handleDrop}
-				className={`border-b border-white/10 bg-white/10 backdrop-blur-sm ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
+				onDragEnd={handleDragEnd}
+				className={`border-b border-white/10 bg-white/10 backdrop-blur-sm transition-all ${isDragging ? 'opacity-40 scale-95' : ''
+					} ${dragOver === 'top' ? 'border-t-4 border-t-cyan-400 bg-cyan-500/20 shadow-lg shadow-cyan-500/50' : ''
+					} ${dragOver === 'bottom' ? 'border-b-4 border-b-cyan-400 bg-cyan-500/20 shadow-lg shadow-cyan-500/50' : ''
+					}`}
 			>
 				<td className="px-2 py-2">
 					<div
 						draggable
 						onDragStart={handleDragStart}
-						className="cursor-move text-white/50 hover:text-white"
+						className="cursor-move text-white/50 hover:text-white transition-colors"
 						title="Drag to reorder"
 					>
 						<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
@@ -296,7 +369,7 @@ const RecurringExpenseRow = ({
 									note: expense.note || '',
 									isAutomatic: expense.isAutomatic || false,
 								});
-								onSave();
+								onCancel();
 							}}
 							className="rounded-lg bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30"
 						>
@@ -313,13 +386,17 @@ const RecurringExpenseRow = ({
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
-			className={`border-b border-white/10 transition-all hover:bg-white/5 ${dragOver ? 'border-t-4 border-t-cyan-400' : ''}`}
+			onDragEnd={handleDragEnd}
+			className={`border-b border-white/10 transition-all hover:bg-white/5 ${isDragging ? 'opacity-40 scale-95' : ''
+				} ${dragOver === 'top' ? 'border-t-4 border-t-cyan-400 bg-cyan-500/20 shadow-lg shadow-cyan-500/50' : ''
+				} ${dragOver === 'bottom' ? 'border-b-4 border-b-cyan-400 bg-cyan-500/20 shadow-lg shadow-cyan-500/50' : ''
+				}`}
 		>
 			<td className="px-2 py-2">
 				<div
 					draggable
 					onDragStart={handleDragStart}
-					className="cursor-move text-white/50 hover:text-white"
+					className="cursor-move text-white/50 hover:text-white transition-colors"
 					title="Drag to reorder"
 				>
 					<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">

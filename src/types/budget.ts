@@ -5,6 +5,7 @@ export interface RecurringExpense {
   link?: string;
   note?: string;
   isAutomatic?: boolean; // If true, status will be 'automatic' when copied to budget
+  order: number; // For maintaining custom sort order
 }
 
 export interface BudgetLineItem {

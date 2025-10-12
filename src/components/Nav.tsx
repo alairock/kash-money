@@ -32,8 +32,8 @@ export const Nav = () => {
 							<NavLink to="/budgets" className={linkClass}>
 								💰 Budgets
 							</NavLink>
-							<NavLink to="/config" className={linkClass}>
-								⚙️ Config
+							<NavLink to="/recurring-expenses" className={linkClass}>
+								💸 Recurring Expenses
 							</NavLink>
 						</>
 					)}

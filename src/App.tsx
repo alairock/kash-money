@@ -4,7 +4,7 @@ import { Nav } from './components/Nav';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Budgets } from './pages/Budgets';
 import { BudgetView } from './pages/BudgetView';
-import { Config } from './pages/Config';
+import { RecurringExpenses } from './pages/RecurringExpenses';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { ForgotPassword } from './pages/ForgotPassword';
@@ -37,10 +37,10 @@ export const App = () => {
             }
           />
           <Route
-            path="/config"
+            path="/recurring-expenses"
             element={
               <ProtectedRoute>
-                <Config />
+                <RecurringExpenses />
               </ProtectedRoute>
             }
           />
