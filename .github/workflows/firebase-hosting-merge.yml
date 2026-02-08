@@ -26,13 +26,7 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
 
-      # Build functions
-      - name: Install function dependencies
-        run: cd functions && npm ci
-      - name: Build functions
-        run: cd functions && npm run build
-
-      # Deploy both hosting and functions
+      # Deploy hosting only (deploy functions manually when needed)
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -40,9 +34,3 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KASHMONEY_9F3C2 }}
           channelId: live
           projectId: kashmoney-9f3c2
-
-      - name: Deploy Functions
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KASHMONEY_9F3C2 }}' > $HOME/gcloud-key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
-          npx firebase-tools deploy --only functions --project kashmoney-9f3c2 --non-interactive
