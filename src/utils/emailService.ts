@@ -77,13 +77,6 @@ export const getDefaultEmailBody = (
 
 Please find attached invoice ${invoice.invoiceNumber} for the services provided.
 
-Amount due: $${invoice.total.toFixed(2)}
-Due date: ${new Date(invoice.dateDue).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })}
-
 If you have any questions about this invoice, please don't hesitate to reach out.
 
 Thank you for your business!
