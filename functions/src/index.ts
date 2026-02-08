@@ -55,6 +55,7 @@ export const sendInvoiceEmail = functions
             Name: data.pdfFilename,
             Content: data.pdfBase64,
             ContentType: 'application/pdf',
+            ContentID: '',
           },
         ],
       });
@@ -65,12 +66,15 @@ export const sendInvoiceEmail = functions
         success: true,
         messageId: result.MessageID,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error sending email:', error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
 
       throw new functions.https.HttpsError(
         'internal',
-        `Failed to send email: ${error.message || 'Unknown error'}`
+        `Failed to send email: ${errorMessage}`
       );
     }
   }
