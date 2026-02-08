@@ -35,6 +35,9 @@ export const Nav = () => {
 							<NavLink to="/recurring-expenses" className={linkClass}>
 								💸 Recurring Expenses
 							</NavLink>
+							<NavLink to="/billing" className={linkClass}>
+								📄 Billing
+							</NavLink>
 						</>
 					)}
 				</div>

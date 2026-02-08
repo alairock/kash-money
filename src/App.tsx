@@ -5,6 +5,11 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Budgets } from './pages/Budgets';
 import { BudgetView } from './pages/BudgetView';
 import { RecurringExpenses } from './pages/RecurringExpenses';
+import { Billing } from './pages/Billing';
+import { Invoices } from './pages/Invoices';
+import { Clients } from './pages/Clients';
+import { InvoiceEditor } from './pages/InvoiceEditor';
+import { BillingSettings } from './pages/BillingSettings';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { ForgotPassword } from './pages/ForgotPassword';
@@ -44,6 +49,21 @@ export const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/billing"
+            element={
+              <ProtectedRoute>
+                <Billing />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/billing/invoices" replace />} />
+            <Route path="invoices" element={<Invoices />} />
+            <Route path="invoices/new" element={<InvoiceEditor />} />
+            <Route path="invoices/:id/edit" element={<InvoiceEditor />} />
+            <Route path="clients" element={<Clients />} />
+            <Route path="settings" element={<BillingSettings />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

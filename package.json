@@ -12,6 +12,8 @@
   "dependencies": {
     "dotenv": "17.2.3",
     "firebase": "12.4.0",
+    "jspdf": "4.1.0",
+    "jspdf-autotable": "5.0.7",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "react-router-dom": "6.18.0"
