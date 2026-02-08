@@ -1,7 +1,7 @@
-import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import { ServerClient } from 'postmark';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
+import { ServerClient } from 'postmark';
 
 admin.initializeApp();
 
@@ -19,20 +19,22 @@ interface SendInvoiceEmailData {
   pdfFilename: string;
 }
 
-export const sendInvoiceEmail = functions
-  .runWith({ secrets: [postmarkToken] })
-  .https.onCall(async (data: SendInvoiceEmailData, context) => {
+export const sendInvoiceEmail = onCall(
+  { secrets: [postmarkToken] },
+  async (request) => {
     // Verify the user is authenticated
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
+    if (!request.auth) {
+      throw new HttpsError(
         'unauthenticated',
         'User must be authenticated to send emails.'
       );
     }
 
+    const data = request.data as SendInvoiceEmailData;
+
     // Validate required fields
     if (!data.to || !data.from || !data.subject || !data.pdfBase64) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         'Missing required email fields.'
       );
@@ -72,7 +74,7 @@ export const sendInvoiceEmail = functions
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
 
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'internal',
         `Failed to send email: ${errorMessage}`
       );

@@ -39,11 +39,12 @@ export const sendInvoiceEmail = async (
     const pdfBase64 = await blobToBase64(pdfBlob);
 
     // Call the cloud function to send email
+    // Use verified system email as "from", user's email as "reply-to"
     const sendEmail = httpsCallable(functions, 'sendInvoiceEmail');
     const result = await sendEmail({
       to: client.email,
-      from: company.email,
-      replyTo: company.email,
+      from: 'skyler@sixteenink.com', // Verified sender signature
+      replyTo: company.email, // User's email for replies
       subject: `Invoice ${invoice.invoiceNumber}`,
       htmlBody: emailBody.replace(/\n/g, '<br>'), // Convert newlines to HTML breaks
       textBody: emailBody, // Plain text version
