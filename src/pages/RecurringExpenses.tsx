@@ -115,26 +115,50 @@ export const RecurringExpenses = () => {
 	};
 
 	return (
-		<div className="mx-auto max-w-6xl p-6">
-			<div className="mb-8 flex items-center justify-between">
-				<h1 className="text-4xl font-black text-shadow-glow">💸 Recurring Expenses</h1>
+		<div className="mx-auto max-w-6xl p-4 sm:p-6">
+			<div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+				<h1 className="text-3xl font-black leading-tight text-shadow-glow sm:text-4xl">💸 Recurring Expenses</h1>
 				<button
 					type="button"
 					onClick={handleAddExpense}
-					className="gradient-success rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl"
+					className="gradient-success w-full rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl sm:w-auto"
 				>
-					➕ Add Recurring Expense
+					<span className="sm:hidden">➕ Add Expense</span>
+					<span className="hidden sm:inline">➕ Add Recurring Expense</span>
 				</button>
 			</div>
 
-			<div className="glass-effect rounded-2xl p-6 shadow-xl">
-				<h2 className="mb-4 text-2xl font-bold">💸 Recurring Bills/Expenses</h2>
-				<p className="mb-6 text-sm text-white/80">
+			<div className="glass-effect rounded-2xl p-5 shadow-xl sm:p-6">
+				<h2 className="mb-3 text-xl font-bold sm:mb-4 sm:text-2xl">💸 Recurring Bills/Expenses</h2>
+				<p className="mb-5 text-sm text-white/80 sm:mb-6">
 					These expenses will be copied into new budgets. You can edit the values in individual budgets without
 					affecting these defaults.
 				</p>
 
-				<div className="overflow-x-auto">
+				<div className="space-y-3 md:hidden">
+					{loading ? (
+						<div className="rounded-xl bg-white/5 p-5 text-center text-white/70">Loading expenses...</div>
+					) : expenses.length === 0 ? (
+						<div className="rounded-xl bg-white/5 p-5 text-center text-white/70">
+							No recurring expenses yet. Add one to get started! 🚀
+						</div>
+					) : (
+						expenses.map((expense) => (
+							<MobileRecurringExpenseCard
+								key={expense.id}
+								expense={expense}
+								isEditing={editingId === expense.id}
+								onEdit={() => setEditingId(expense.id)}
+								onSave={handleSaveEdit}
+								onCancel={() => handleCancelEdit(expense.id)}
+								onUpdate={handleUpdateExpense}
+								onDelete={handleDeleteExpense}
+							/>
+						))
+					)}
+				</div>
+
+				<div className="hidden overflow-x-auto md:block">
 					<table className="w-full">
 						<thead className="border-b-2 border-white/20">
 							<tr>
@@ -178,6 +202,191 @@ export const RecurringExpenses = () => {
 							)}
 						</tbody>
 					</table>
+				</div>
+			</div>
+		</div>
+	);
+};
+
+interface MobileRecurringExpenseCardProps {
+	expense: RecurringExpense;
+	isEditing: boolean;
+	onEdit: () => void;
+	onSave: () => void;
+	onCancel: () => void;
+	onUpdate: (id: string, updates: Partial<RecurringExpense>) => void;
+	onDelete: (id: string) => void;
+}
+
+const MobileRecurringExpenseCard = ({
+	expense,
+	isEditing,
+	onEdit,
+	onSave,
+	onCancel,
+	onUpdate,
+	onDelete,
+}: MobileRecurringExpenseCardProps) => {
+	const [editValues, setEditValues] = useState({
+		name: expense.name,
+		amount: expense.amount.toString(),
+		link: expense.link || '',
+		note: expense.note || '',
+		isAutomatic: expense.isAutomatic || false,
+	});
+
+	useEffect(() => {
+		setEditValues({
+			name: expense.name,
+			amount: expense.amount.toString(),
+			link: expense.link || '',
+			note: expense.note || '',
+			isAutomatic: expense.isAutomatic || false,
+		});
+	}, [expense]);
+
+	const handleSave = () => {
+		const amount = parseFloat(editValues.amount);
+		if (isNaN(amount)) {
+			alert('Please enter a valid amount');
+			return;
+		}
+
+		if (!editValues.name.trim()) {
+			alert('Please enter a name');
+			return;
+		}
+
+		onUpdate(expense.id, {
+			name: editValues.name,
+			amount,
+			link: editValues.link || '',
+			note: editValues.note || '',
+			isAutomatic: editValues.isAutomatic,
+		});
+		onSave();
+	};
+
+	const amountClass =
+		expense.amount > 0 ? 'text-green-300' : expense.amount < 0 ? 'text-red-300' : 'text-white/80';
+
+	if (isEditing) {
+		return (
+			<div className="rounded-2xl bg-white/10 p-4 shadow-lg backdrop-blur-sm">
+				<div className="space-y-3">
+					<div>
+						<label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/70">Name</label>
+						<input
+							type="text"
+							value={editValues.name}
+							onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+							className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+							autoFocus
+						/>
+					</div>
+					<div className="grid grid-cols-2 gap-3">
+						<div>
+							<label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/70">Amount</label>
+							<input
+								type="number"
+								step="0.01"
+								value={editValues.amount}
+								onChange={(e) => setEditValues({ ...editValues, amount: e.target.value })}
+								className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+							/>
+						</div>
+						<label className="flex items-end gap-2 pb-2 text-sm text-white/80">
+							<input
+								type="checkbox"
+								checked={editValues.isAutomatic}
+								onChange={(e) => setEditValues({ ...editValues, isAutomatic: e.target.checked })}
+								className="h-4 w-4"
+							/>
+							Automatic
+						</label>
+					</div>
+					<div>
+						<label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/70">Link</label>
+						<input
+							type="text"
+							value={editValues.link}
+							onChange={(e) => setEditValues({ ...editValues, link: e.target.value })}
+							className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+							placeholder="http://..."
+						/>
+					</div>
+					<div>
+						<label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/70">Note</label>
+						<input
+							type="text"
+							value={editValues.note}
+							onChange={(e) => setEditValues({ ...editValues, note: e.target.value })}
+							className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+						/>
+					</div>
+					<div className="grid grid-cols-2 gap-2">
+						<button
+							type="button"
+							onClick={handleSave}
+							className="gradient-success rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+						>
+							Save
+						</button>
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg bg-white/20 px-3 py-2 text-sm font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="rounded-2xl bg-white/5 p-4 shadow-lg backdrop-blur-sm">
+			<div className="space-y-2">
+				<div className="flex items-start justify-between gap-3">
+					<h3 className="break-words text-lg font-bold text-white">{expense.name}</h3>
+					<label className="flex items-center gap-2 text-xs text-white/70">
+						<input
+							type="checkbox"
+							checked={expense.isAutomatic || false}
+							onChange={(e) => onUpdate(expense.id, { isAutomatic: e.target.checked })}
+							className="h-4 w-4"
+						/>
+						Auto
+					</label>
+				</div>
+				<div className="flex items-center justify-between text-sm">
+					<span className="text-white/70">Estimated Amount</span>
+					<span className={`font-bold ${amountClass}`}>{formatCurrency(expense.amount)}</span>
+				</div>
+				{expense.link ? (
+					<a href={expense.link} target="_blank" rel="noopener noreferrer" className="block text-sm text-cyan-300 hover:text-cyan-100 hover:underline">
+						🔗 Open link
+					</a>
+				) : (
+					<p className="text-sm text-white/40">No link</p>
+				)}
+				<p className="text-sm text-white/80">{expense.note || 'No note'}</p>
+				<div className="grid grid-cols-2 gap-2 pt-1">
+					<button
+						type="button"
+						onClick={onEdit}
+						className="gradient-primary rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+					>
+						Edit
+					</button>
+					<button
+						type="button"
+						onClick={() => onDelete(expense.id)}
+						className="gradient-secondary rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+					>
+						Delete
+					</button>
 				</div>
 			</div>
 		</div>

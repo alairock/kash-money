@@ -169,7 +169,7 @@ export const BudgetView = () => {
 
 	if (loading || !budget) {
 		return (
-			<div className="mx-auto max-w-6xl p-6">
+			<div className="mx-auto max-w-6xl p-4 sm:p-6">
 				<div className="glass-effect rounded-2xl p-12 text-center shadow-xl">
 					<p className="text-xl text-white/80">Loading budget...</p>
 				</div>
@@ -180,55 +180,57 @@ export const BudgetView = () => {
 	const totals = calculateTotals();
 
 	return (
-		<div className="mx-auto max-w-6xl p-6">
-			<div className="mb-6">
-				<Link to="/budgets" className="font-semibold text-white/80 transition-colors hover:text-white">
+		<div className="mx-auto max-w-6xl p-4 sm:p-6">
+			<div className="mb-4 sm:mb-6">
+				<Link to="/budgets" className="text-sm font-semibold text-white/80 transition-colors hover:text-white sm:text-base">
 					← Back to Budgets
 				</Link>
 			</div>
 
 			<div className="mb-6">
-				<h1 className="text-4xl font-black text-shadow-glow">{budget.name}</h1>
-				<p className="text-white/70">
+				<h1 className="break-words text-3xl font-black leading-tight text-shadow-glow sm:text-4xl">{budget.name}</h1>
+				<p className="text-sm text-white/70 sm:text-base">
 					📅 Created: {new Date(budget.dateCreated).toLocaleDateString()}
 				</p>
 			</div>
 
 			{/* Starting Amount */}
-			<div className="glass-effect mb-6 rounded-2xl p-6 shadow-xl">
-				<div className="flex items-center justify-between">
+			<div className="glass-effect mb-6 rounded-2xl p-5 shadow-xl sm:p-6">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div>
 						<h2 className="text-sm font-bold uppercase tracking-wide text-white/70">Starting Amount</h2>
 						{editingStartingAmount ? (
-							<div className="mt-2 flex items-center gap-3">
+							<div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
 								<input
 									type="number"
 									step="0.01"
 									value={startingAmountValue}
 									onChange={(e) => setStartingAmountValue(e.target.value)}
-									className="w-40 rounded-xl border-2 border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+									className="w-full rounded-xl border-2 border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 sm:w-40"
 									autoFocus
 								/>
-								<button
-									type="button"
-									onClick={handleUpdateStartingAmount}
-									className="gradient-success rounded-lg px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
-								>
-									Save
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setEditingStartingAmount(false);
-										setStartingAmountValue(budget.startingAmount.toString());
-									}}
-									className="rounded-lg bg-white/20 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30"
-								>
-									Cancel
-								</button>
+								<div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
+									<button
+										type="button"
+										onClick={handleUpdateStartingAmount}
+										className="gradient-success rounded-lg px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+									>
+										Save
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setEditingStartingAmount(false);
+											setStartingAmountValue(budget.startingAmount.toString());
+										}}
+										className="rounded-lg bg-white/20 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30"
+									>
+										Cancel
+									</button>
+								</div>
 							</div>
 						) : (
-							<p className="gradient-gold mt-2 inline-block rounded-xl px-4 py-2 text-3xl font-black text-purple-900 shadow-lg">
+							<p className="gradient-gold mt-2 inline-block rounded-xl px-4 py-2 text-2xl font-black text-purple-900 shadow-lg sm:text-3xl">
 								{formatCurrency(budget.startingAmount)}
 							</p>
 						)}
@@ -237,7 +239,7 @@ export const BudgetView = () => {
 						<button
 							type="button"
 							onClick={() => setEditingStartingAmount(true)}
-							className="gradient-primary rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105"
+							className="gradient-primary w-full rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 sm:w-auto"
 						>
 							✏️ Edit
 						</button>
@@ -250,14 +252,36 @@ export const BudgetView = () => {
 				<button
 					type="button"
 					onClick={handleAddAdHoc}
-					className="gradient-success rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl"
+					className="gradient-success w-full rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl sm:w-auto"
 				>
 					➕ Add Ad-hoc Item
 				</button>
 			</div>
 
+			{/* Mobile Line Items */}
+			<div className="space-y-3 md:hidden">
+				{budget.lineItems.length === 0 ? (
+					<div className="glass-effect rounded-2xl p-6 text-center text-white/70 shadow-xl">
+						No items yet. Recurring expenses are added automatically when you create a budget. Add ad-hoc items as needed. 🚀
+					</div>
+				) : (
+					budget.lineItems.map((item) => (
+						<MobileLineItemCard
+							key={item.id}
+							item={item}
+							isEditing={editingId === item.id}
+							onEdit={() => setEditingId(item.id)}
+							onSave={handleSaveEdit}
+							onCancel={() => handleCancelEdit(item.id)}
+							onUpdate={handleUpdateItem}
+							onDelete={handleDeleteItem}
+						/>
+					))
+				)}
+			</div>
+
 			{/* Line Items Table */}
-			<div className="glass-effect overflow-x-auto rounded-2xl shadow-xl">
+			<div className="glass-effect hidden overflow-x-auto rounded-2xl shadow-xl md:block">
 				<table className="w-full">
 					<thead className="border-b-2 border-white/20">
 						<tr>
@@ -305,17 +329,17 @@ export const BudgetView = () => {
 			</div>
 
 			{/* Totals */}
-			<div className="glass-effect mt-6 rounded-2xl p-6 shadow-xl">
-				<h2 className="mb-4 text-2xl font-black">📊 Totals</h2>
+			<div className="glass-effect mt-6 rounded-2xl p-5 shadow-xl sm:p-6">
+				<h2 className="mb-4 text-xl font-black sm:text-2xl">📊 Totals</h2>
 				<div className="space-y-3">
-					<div className="flex justify-between">
+					<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
 						<span className="text-white/80">After Unmarked Items:</span>
-						<span className="text-2xl font-bold text-cyan-300">{formatCurrency(totals.unmarkedTotal)}</span>
+						<span className="text-xl font-bold text-cyan-300 sm:text-2xl">{formatCurrency(totals.unmarkedTotal)}</span>
 					</div>
-					<div className="flex justify-between border-t-2 border-white/20 pt-3">
-						<span className="text-lg font-bold text-white/80">Final Total (After All Items):</span>
+					<div className="flex flex-col gap-2 border-t-2 border-white/20 pt-3 sm:flex-row sm:items-center sm:justify-between">
+						<span className="text-base font-bold text-white/80 sm:text-lg">Final Total (After All Items):</span>
 						<span
-							className={`rounded-xl px-4 py-2 text-3xl font-black shadow-lg ${totals.finalTotal < 0
+							className={`w-fit rounded-xl px-4 py-2 text-2xl font-black shadow-lg sm:text-3xl ${totals.finalTotal < 0
 								? 'bg-gradient-to-r from-red-600 to-red-800 text-white'
 								: totals.finalTotal > 0
 									? 'gradient-gold text-purple-900'
@@ -325,6 +349,197 @@ export const BudgetView = () => {
 							{formatCurrency(totals.finalTotal)}
 						</span>
 					</div>
+				</div>
+			</div>
+		</div>
+	);
+};
+
+interface MobileLineItemCardProps {
+	item: BudgetLineItem;
+	isEditing: boolean;
+	onEdit: () => void;
+	onSave: () => void;
+	onCancel: () => void;
+	onUpdate: (id: string, updates: Partial<BudgetLineItem>) => void;
+	onDelete: (id: string) => void;
+}
+
+const MobileLineItemCard = ({ item, isEditing, onEdit, onSave, onCancel, onUpdate, onDelete }: MobileLineItemCardProps) => {
+	const [editValues, setEditValues] = useState({
+		status: item.status,
+		name: item.name,
+		amount: item.amount.toString(),
+		link: item.link || '',
+		note: item.note || '',
+		isMarked: item.isMarked,
+	});
+
+	useEffect(() => {
+		setEditValues({
+			status: item.status,
+			name: item.name,
+			amount: item.amount.toString(),
+			link: item.link || '',
+			note: item.note || '',
+			isMarked: item.isMarked,
+		});
+	}, [item]);
+
+	const handleSave = () => {
+		const amount = parseFloat(editValues.amount);
+		if (isNaN(amount)) {
+			alert('Please enter a valid amount');
+			return;
+		}
+
+		onUpdate(item.id, {
+			status: editValues.status,
+			name: editValues.name,
+			amount,
+			link: editValues.link || '',
+			note: editValues.note || '',
+			isMarked: editValues.isMarked,
+		});
+		onSave();
+	};
+
+	const statusDisplay = item.status.charAt(0).toUpperCase() + item.status.slice(1);
+	const amountClass =
+		item.amount > 0 ? 'text-green-300' : item.amount < 0 ? 'text-red-300' : 'text-white/80';
+
+	if (isEditing) {
+		return (
+			<div className="glass-effect rounded-2xl p-4 shadow-xl">
+				<div className="space-y-3">
+					<div>
+						<label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/70">Name</label>
+						<input
+							type="text"
+							value={editValues.name}
+							onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+							className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+						/>
+					</div>
+					<div className="grid grid-cols-2 gap-3">
+						<div>
+							<label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/70">Status</label>
+							<select
+								value={editValues.status}
+								onChange={(e) => setEditValues({ ...editValues, status: e.target.value as 'incomplete' | 'complete' | 'automatic' })}
+								className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+							>
+								<option value="incomplete">Incomplete</option>
+								<option value="complete">Complete</option>
+								<option value="automatic">Automatic</option>
+							</select>
+						</div>
+						<div>
+							<label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/70">Amount</label>
+							<input
+								type="text"
+								inputMode="decimal"
+								value={editValues.amount}
+								onChange={(e) => setEditValues({ ...editValues, amount: e.target.value })}
+								className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+								placeholder="0.00"
+							/>
+						</div>
+					</div>
+					<div>
+						<label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/70">Link</label>
+						<input
+							type="text"
+							value={editValues.link}
+							onChange={(e) => setEditValues({ ...editValues, link: e.target.value })}
+							className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+							placeholder="http://..."
+						/>
+					</div>
+					<div>
+						<label className="mb-1 block text-xs font-bold uppercase tracking-wide text-white/70">Note</label>
+						<input
+							type="text"
+							value={editValues.note}
+							onChange={(e) => setEditValues({ ...editValues, note: e.target.value })}
+							className="w-full rounded-lg border-2 border-white/20 bg-white/10 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+						/>
+					</div>
+					<label className="flex items-center gap-2 text-sm text-white/80">
+						<input
+							type="checkbox"
+							checked={editValues.isMarked}
+							onChange={(e) => setEditValues({ ...editValues, isMarked: e.target.checked })}
+							className="h-4 w-4"
+						/>
+						Marked
+					</label>
+					<div className="grid grid-cols-2 gap-2">
+						<button
+							type="button"
+							onClick={handleSave}
+							className="gradient-success rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+						>
+							Save
+						</button>
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg bg-white/20 px-3 py-2 text-sm font-bold text-white backdrop-blur-sm transition-all hover:bg-white/30"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="glass-effect rounded-2xl p-4 shadow-xl">
+			<div className="space-y-2">
+				<div className="flex items-start justify-between gap-3">
+					<h3 className="text-lg font-bold text-white break-words">{item.name}</h3>
+					<span className="text-xs text-white/70">{item.isRecurring ? 'Recurring' : 'Ad-hoc'}</span>
+				</div>
+				<div className="flex items-center justify-between text-sm">
+					<span className="text-white/70">Status</span>
+					<span className="font-semibold text-white">{statusDisplay}</span>
+				</div>
+				<div className="flex items-center justify-between text-sm">
+					<span className="text-white/70">Amount</span>
+					<span className={`font-bold ${amountClass}`}>{formatCurrency(item.amount)}</span>
+				</div>
+				<div className="flex items-center justify-between text-sm">
+					<span className="text-white/70">Marked</span>
+					<input
+						type="checkbox"
+						checked={item.isMarked}
+						onChange={(e) => onUpdate(item.id, { isMarked: e.target.checked })}
+						className="h-4 w-4"
+					/>
+				</div>
+				{item.link && (
+					<a href={item.link} target="_blank" rel="noopener noreferrer" className="block text-sm text-cyan-300 hover:text-cyan-100 hover:underline">
+						🔗 Open link
+					</a>
+				)}
+				{item.note && <p className="text-sm text-white/80">{item.note}</p>}
+				<div className="grid grid-cols-2 gap-2 pt-1">
+					<button
+						type="button"
+						onClick={onEdit}
+						className="gradient-primary rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+					>
+						Edit
+					</button>
+					<button
+						type="button"
+						onClick={() => onDelete(item.id)}
+						className="gradient-secondary rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+					>
+						Delete
+					</button>
 				</div>
 			</div>
 		</div>
@@ -686,4 +901,3 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 		</tr>
 	);
 };
-

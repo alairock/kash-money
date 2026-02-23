@@ -97,15 +97,16 @@ export const Budgets = () => {
 	};
 
 	return (
-		<div className="mx-auto max-w-6xl p-6">
-			<div className="mb-8 flex items-center justify-between">
-				<h1 className="text-4xl font-black text-shadow-glow">💰 My Budgets</h1>
+		<div className="mx-auto max-w-6xl p-4 sm:p-6">
+			<div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+				<h1 className="text-3xl font-black leading-tight text-shadow-glow sm:text-4xl">💰 My Budgets</h1>
 				<button
 					type="button"
 					onClick={() => setShowCreateModal(true)}
-					className="gradient-success rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl"
+					className="gradient-success w-full rounded-xl px-4 py-3 text-base font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl sm:w-auto sm:px-6"
 				>
-					✨ Create New Budget
+					<span className="sm:hidden">✨ Create Budget</span>
+					<span className="hidden sm:inline">✨ Create New Budget</span>
 				</button>
 			</div>
 
@@ -122,26 +123,26 @@ export const Budgets = () => {
 					{budgets.map((budget) => (
 						<div
 							key={budget.id}
-							className="card-hover glass-effect flex items-center justify-between rounded-2xl p-6 shadow-xl"
+							className="card-hover glass-effect flex flex-col gap-4 rounded-2xl p-5 shadow-xl sm:flex-row sm:items-center sm:justify-between sm:p-6"
 						>
-							<div>
-								<h3 className="text-2xl font-bold text-white">{budget.name}</h3>
+							<div className="min-w-0">
+								<h3 className="break-words text-2xl font-bold text-white">{budget.name}</h3>
 								<p className="text-sm text-white/70">📅 Created: {formatDate(budget.dateCreated)}</p>
 								<p className="gradient-gold mt-1 inline-block rounded-lg px-3 py-1 text-sm font-bold text-purple-900">
 									💵 {formatCurrency(budget.startingAmount)}
 								</p>
 							</div>
-							<div className="flex gap-3">
+							<div className="grid w-full grid-cols-2 gap-3 sm:w-auto sm:flex">
 								<Link
 									to={`/budgets/${budget.id}`}
-									className="gradient-success rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105"
+									className="gradient-success rounded-xl px-4 py-3 text-center font-bold text-white shadow-lg transition-all hover:scale-105 sm:px-6"
 								>
 									👁️ View
 								</Link>
 								<button
 									type="button"
 									onClick={() => handleDelete(budget.id)}
-									className="gradient-secondary rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105"
+									className="gradient-secondary rounded-xl px-4 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 sm:px-6"
 								>
 									🗑️ Delete
 								</button>
@@ -154,7 +155,7 @@ export const Budgets = () => {
 			{/* Create Budget Modal */}
 			{showCreateModal && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="glass-effect w-full max-w-md rounded-2xl p-8 shadow-2xl">
+					<div className="glass-effect mx-4 w-full max-w-md rounded-2xl p-6 shadow-2xl sm:p-8">
 						<h2 className="mb-6 text-3xl font-black text-shadow-glow">✨ Create New Budget</h2>
 						<div className="mb-6">
 							<label className="mb-2 block text-sm font-bold text-white/90">Budget Name (e.g., 2025-11-01)</label>

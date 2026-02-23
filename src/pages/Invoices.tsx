@@ -229,8 +229,8 @@ export const Invoices = () => {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="flex flex-wrap gap-2 text-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="order-2 basis-full flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto pr-1 text-sm sm:order-1 sm:basis-auto sm:w-auto">
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
@@ -283,7 +283,7 @@ export const Invoices = () => {
         <button
           type="button"
           onClick={() => navigate('/billing/invoices/new')}
-          className="ml-auto gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105"
+          className="order-1 basis-full w-[13.5rem] shrink-0 gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 sm:order-2 sm:ml-auto sm:basis-auto sm:w-auto"
         >
           ✨ Create New Invoice
         </button>
@@ -297,121 +297,203 @@ export const Invoices = () => {
           </p>
         </div>
       ) : (
-        <div className="glass-dark rounded-xl overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
-                  Invoice #
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
-                  Client
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
-                  Created
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
-                  Due Date
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-white/80">
-                  Amount
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-white/80">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredInvoices.map((invoice) => (
-                <tr
-                  key={invoice.id}
-                  className="border-b border-white/5 hover:bg-white/5 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <span className="font-semibold">{invoice.invoiceNumber}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-white/80">{invoice.clientName}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {invoice.status === 'paid' && invoice.datePaid ? (
-                      <Tooltip content={`Paid: ${formatDate(invoice.datePaid)}`}>
+        <>
+          <div className="space-y-3 lg:hidden">
+            {filteredInvoices.map((invoice) => (
+              <div key={invoice.id} className="glass-dark rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{invoice.invoiceNumber}</p>
+                    <p className="text-xs text-white/70">{invoice.clientName}</p>
+                  </div>
+                  <span className="text-sm font-bold text-green-400">
+                    {formatCurrency(invoice.total)}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex items-center gap-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${getStatusBadgeClass(invoice.status)}`}
+                  >
+                    {invoice.status}
+                  </span>
+                  {invoice.status === 'paid' && invoice.datePaid && (
+                    <span className="text-xs text-white/60">
+                      Paid {formatDate(invoice.datePaid)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-white/70">
+                  <div>
+                    <p className="text-white/50">Created</p>
+                    <p>{formatDate(invoice.dateCreated)}</p>
+                  </div>
+                  <div className="justify-self-end text-right">
+                    <p className="text-white/50">Due</p>
+                    <p>{formatDate(invoice.dateDue)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
+                  {invoice.status !== 'paid' && (
+                    <Tooltip content="Mark as Paid">
+                      <button
+                        type="button"
+                        onClick={() => handleMarkAsPaid(invoice)}
+                        className="rounded glass-effect px-3 py-1 text-sm font-semibold text-green-400 transition-all hover:scale-105"
+                        title="Mark as Paid"
+                      >
+                        Paid?
+                      </button>
+                    </Tooltip>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/billing/invoices/${invoice.id}/edit`)}
+                    className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                    title="Edit"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadPDF(invoice)}
+                    className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                    title="Download PDF"
+                  >
+                    📄
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendEmail(invoice)}
+                    className="rounded glass-effect px-3 py-1 text-sm font-semibold text-blue-400 transition-all hover:scale-105"
+                    title="Send Email"
+                  >
+                    📧
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden lg:block glass-dark rounded-xl overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    Invoice #
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    Client
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    Created
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    Due Date
+                  </th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-white/80">
+                    Amount
+                  </th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-white/80">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInvoices.map((invoice) => (
+                  <tr
+                    key={invoice.id}
+                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <span className="font-semibold">{invoice.invoiceNumber}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-white/80">{invoice.clientName}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {invoice.status === 'paid' && invoice.datePaid ? (
+                        <Tooltip content={`Paid: ${formatDate(invoice.datePaid)}`}>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${getStatusBadgeClass(invoice.status)}`}
+                          >
+                            {invoice.status}
+                          </span>
+                        </Tooltip>
+                      ) : (
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${getStatusBadgeClass(invoice.status)}`}
                         >
                           {invoice.status}
                         </span>
-                      </Tooltip>
-                    ) : (
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${getStatusBadgeClass(invoice.status)}`}
-                      >
-                        {invoice.status}
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-white/70 text-sm">
+                        {formatDate(invoice.dateCreated)}
                       </span>
-                    )}
-
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-white/70 text-sm">
-                      {formatDate(invoice.dateCreated)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-white/70 text-sm">
-                      {formatDate(invoice.dateDue)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="font-bold text-green-400">
-                      {formatCurrency(invoice.total)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-end gap-2">
-                      {invoice.status !== 'paid' && (
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-white/70 text-sm">
+                        {formatDate(invoice.dateDue)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className="font-bold text-green-400">
+                        {formatCurrency(invoice.total)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end gap-2">
+                        {invoice.status !== 'paid' && (
+                          <Tooltip content="Mark as Paid">
+                            <button
+                              type="button"
+                              onClick={() => handleMarkAsPaid(invoice)}
+                              className="rounded glass-effect px-3 py-1 text-sm font-semibold text-green-400 transition-all hover:scale-105"
+                              title="Mark as Paid"
+                            >
+                              Paid?
+                            </button>
+                          </Tooltip>
+                        )}
                         <button
                           type="button"
-                          onClick={() => handleMarkAsPaid(invoice)}
-                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-green-400 transition-all hover:scale-105"
-                          title="Mark as Paid"
+                          onClick={() => navigate(`/billing/invoices/${invoice.id}/edit`)}
+                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                          title="Edit"
                         >
-                          Paid
+                          Edit
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/billing/invoices/${invoice.id}/edit`)}
-                        className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
-                        title="Edit"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadPDF(invoice)}
-                        className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
-                        title="Download PDF"
-                      >
-                        📄
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSendEmail(invoice)}
-                        className="rounded glass-effect px-3 py-1 text-sm font-semibold text-blue-400 transition-all hover:scale-105"
-                        title="Send Email"
-                      >
-                        📧
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadPDF(invoice)}
+                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                          title="Download PDF"
+                        >
+                          📄
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSendEmail(invoice)}
+                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-blue-400 transition-all hover:scale-105"
+                          title="Send Email"
+                        >
+                          📧
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {emailModalData && (

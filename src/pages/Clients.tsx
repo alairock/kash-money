@@ -241,68 +241,108 @@ export const Clients = () => {
           </p>
         </div>
       ) : (
-        <div className="glass-dark rounded-xl overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
-                  Name
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
-                  Email
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
-                  Company
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
-                  Hourly Rate
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-white/80">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map((client) => (
-                <tr
-                  key={client.id}
-                  className="border-b border-white/5 hover:bg-white/5 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <span className="font-semibold">{client.name || '—'}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-white/70">{client.email || '—'}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-white/70">{client.company || '—'}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-mono">{formatCurrency(client.hourlyRate)}/hr</span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleEditClient(client)}
-                        className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteClient(client.id)}
-                        className="rounded glass-effect px-3 py-1 text-sm font-semibold text-red-400 transition-all hover:text-red-300"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+        <>
+          <div className="space-y-3 lg:hidden">
+            {clients.map((client) => (
+              <div key={client.id} className="glass-dark rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{client.name || '—'}</p>
+                    <p className="text-xs text-white/70">{client.email || '—'}</p>
+                  </div>
+                  <span className="font-mono text-sm text-green-400">
+                    {formatCurrency(client.hourlyRate)}/hr
+                  </span>
+                </div>
+
+                <div className="mt-3 text-sm text-white/70">
+                  <span className="text-white/50">Company: </span>
+                  {client.company || '—'}
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleEditClient(client)}
+                    className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteClient(client.id)}
+                    className="rounded glass-effect px-3 py-1 text-sm font-semibold text-red-400 transition-all hover:text-red-300"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden lg:block glass-dark rounded-xl overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    Name
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    Email
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    Company
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    Hourly Rate
+                  </th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-white/80">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {clients.map((client) => (
+                  <tr
+                    key={client.id}
+                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <span className="font-semibold">{client.name || '—'}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-white/70">{client.email || '—'}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-white/70">{client.company || '—'}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="font-mono">{formatCurrency(client.hourlyRate)}/hr</span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEditClient(client)}
+                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClient(client.id)}
+                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-red-400 transition-all hover:text-red-300"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

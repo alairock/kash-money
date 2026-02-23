@@ -67,7 +67,8 @@ export const InvoiceEditor = () => {
           clientEmail: lastInvoice.clientEmail,
           lineItems: copiedLineItems,
           total: lastInvoice.total,
-          notes: lastInvoice.notes || companySettings?.defaultInvoiceNotes || '',
+          notes:
+            lastInvoice.notes || companySettings?.defaultInvoiceNotes || '',
         }));
       } else {
         // No previous invoices, just use default notes
@@ -216,7 +217,7 @@ export const InvoiceEditor = () => {
     if (!id) return;
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete invoice ${invoice.invoiceNumber}? This action cannot be undone.`
+      `Are you sure you want to delete invoice ${invoice.invoiceNumber}? This action cannot be undone.`,
     );
 
     if (!confirmDelete) return;
@@ -244,37 +245,39 @@ export const InvoiceEditor = () => {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold">
           {id ? 'Edit Invoice' : 'Create New Invoice'}
-          {isPaid && <span className="ml-3 text-sm text-green-400">(Paid - Locked)</span>}
+          {isPaid && (
+            <span className="ml-3 text-sm text-green-400">(Paid - Locked)</span>
+          )}
         </h2>
         <button
           type="button"
           onClick={() => navigate('/billing/invoices')}
-          className="text-white/70 hover:text-white transition-colors"
+          className="text-white/70 transition-colors hover:text-white"
         >
           ← Back to Invoices
         </button>
       </div>
 
-      <div className="glass-dark p-8 rounded-xl space-y-6">
+      <div className="glass-dark space-y-6 rounded-xl p-4 sm:p-8">
         {/* Invoice Number and Date */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">
+            <label className="mb-2 block text-sm font-semibold text-white/80">
               Invoice Number
             </label>
             <input
               type="text"
               value={invoice.invoiceNumber || 'Auto-generated on save'}
               readOnly
-              className="w-full rounded-lg glass-effect px-4 py-2 text-white/50 cursor-not-allowed"
+              className="glass-effect w-full cursor-not-allowed rounded-lg px-4 py-2 text-white/50"
               placeholder="Auto-generated on save"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">
+            <label className="mb-2 block text-sm font-semibold text-white/80">
               Invoice Date
             </label>
             <input
@@ -284,21 +287,21 @@ export const InvoiceEditor = () => {
                 handleDateCreatedChange(new Date(e.target.value).toISOString())
               }
               disabled={isPaid}
-              className="w-full rounded-lg glass-effect px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="glass-effect w-full rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
         </div>
 
         {/* Client Selection */}
         <div>
-          <label className="block text-sm font-semibold text-white/80 mb-2">
+          <label className="mb-2 block text-sm font-semibold text-white/80">
             Client *
           </label>
           <select
             value={invoice.clientId}
             onChange={(e) => handleClientChange(e.target.value)}
             disabled={isPaid}
-            className="w-full rounded-lg glass-effect px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="glass-effect w-full rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="">Select a client...</option>
             {clients.map((client) => (
@@ -316,26 +319,28 @@ export const InvoiceEditor = () => {
 
         {/* Due Date (read-only, auto-calculated) */}
         <div>
-          <label className="block text-sm font-semibold text-white/80 mb-2">
+          <label className="mb-2 block text-sm font-semibold text-white/80">
             Due Date (Net 30)
           </label>
           <input
             type="date"
             value={invoice.dateDue.split('T')[0]}
             readOnly
-            className="w-full rounded-lg glass-effect px-4 py-2 text-white/50 cursor-not-allowed"
+            className="glass-effect w-full cursor-not-allowed rounded-lg px-4 py-2 text-white/50"
           />
         </div>
 
         {!isPaid && (
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">
+            <label className="mb-2 block text-sm font-semibold text-white/80">
               Status
             </label>
             <select
               value={invoice.status}
-              onChange={(e) => handleStatusChange(e.target.value as Invoice['status'])}
-              className="w-full rounded-lg glass-effect px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) =>
+                handleStatusChange(e.target.value as Invoice['status'])
+              }
+              className="glass-effect w-full rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
               <option value="draft">Draft</option>
               <option value="sent">Sent</option>
@@ -347,7 +352,7 @@ export const InvoiceEditor = () => {
 
         {/* Line Items */}
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <label className="text-sm font-semibold text-white/80">
               Line Items *
             </label>
@@ -355,31 +360,39 @@ export const InvoiceEditor = () => {
               type="button"
               onClick={addLineItem}
               disabled={!invoice.clientId || isPaid}
-              className="gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="gradient-primary w-full rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               ➕ Add Line Item
             </button>
           </div>
 
           {invoice.lineItems.length === 0 ? (
-            <div className="glass-effect p-8 text-center rounded-lg">
+            <div className="glass-effect rounded-lg p-8 text-center">
               <p className="text-white/50">No line items yet</p>
             </div>
           ) : (
             <div className="space-y-3">
               {/* Column Headers */}
-              <div className="grid grid-cols-12 gap-3 px-4 pb-2">
+              <div className="hidden grid-cols-12 gap-3 px-4 pb-2 sm:grid">
                 <div className="col-span-5">
-                  <span className="text-xs font-semibold text-white/60 uppercase">Description</span>
+                  <span className="text-xs font-semibold text-white/60 uppercase">
+                    Description
+                  </span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-xs font-semibold text-white/60 uppercase">Hours</span>
+                  <span className="text-xs font-semibold text-white/60 uppercase">
+                    Hours
+                  </span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-xs font-semibold text-white/60 uppercase">Rate</span>
+                  <span className="text-xs font-semibold text-white/60 uppercase">
+                    Rate
+                  </span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-xs font-semibold text-white/60 uppercase">Amount</span>
+                  <span className="text-xs font-semibold text-white/60 uppercase">
+                    Amount
+                  </span>
                 </div>
                 <div className="col-span-1"></div>
               </div>
@@ -387,9 +400,12 @@ export const InvoiceEditor = () => {
               {invoice.lineItems.map((item) => (
                 <div
                   key={item.id}
-                  className="glass-effect p-4 rounded-lg grid grid-cols-12 gap-3 items-start"
+                  className="glass-effect grid grid-cols-1 gap-3 rounded-lg p-4 sm:grid-cols-12 sm:items-start"
                 >
-                  <div className="col-span-5">
+                  <div className="sm:col-span-5">
+                    <label className="mb-1 block text-xs font-semibold text-white/60 uppercase sm:hidden">
+                      Description
+                    </label>
                     <textarea
                       value={item.description}
                       onChange={(e) =>
@@ -398,10 +414,13 @@ export const InvoiceEditor = () => {
                       disabled={isPaid}
                       placeholder="Description"
                       rows={2}
-                      className="w-full rounded glass-effect px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="glass-effect w-full resize-y rounded px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-xs font-semibold text-white/60 uppercase sm:hidden">
+                      Hours
+                    </label>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -417,10 +436,13 @@ export const InvoiceEditor = () => {
                       }}
                       disabled={isPaid}
                       placeholder="Hours"
-                      className="w-full rounded glass-effect px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="glass-effect w-full rounded px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-xs font-semibold text-white/60 uppercase sm:hidden">
+                      Rate
+                    </label>
                     <input
                       type="number"
                       value={item.rate}
@@ -433,21 +455,28 @@ export const InvoiceEditor = () => {
                       placeholder="Rate"
                       step="0.01"
                       min="0"
-                      className="w-full rounded glass-effect px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="glass-effect w-full rounded px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
-                  <div className="col-span-2 text-right font-mono text-white/80">
-                    {formatCurrency(item.amount)}
+                  <div className="sm:col-span-2">
+                    <div className="mb-1 block text-xs font-semibold text-white/60 uppercase sm:hidden">
+                      Amount
+                    </div>
+                    <div className="text-left font-mono text-white/80 sm:text-right">
+                      {formatCurrency(item.amount)}
+                    </div>
                   </div>
-                  <div className="col-span-1 text-right">
+                  <div className="text-right sm:col-span-1">
                     {!isPaid && (
                       <button
                         type="button"
                         onClick={() => deleteLineItem(item.id)}
-                        className="text-red-400 hover:text-red-300 transition-colors"
-                        title="Delete"
+                        className="glass-effect w-full rounded px-3 py-2 text-sm font-semibold text-red-400 transition-colors hover:text-red-300 sm:w-auto sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0"
+                        title="Delete line item"
+                        aria-label="Delete line item"
                       >
-                        ✕
+                        <span className="sm:hidden">Remove Line Item</span>
+                        <span className="hidden sm:inline">✕</span>
                       </button>
                     )}
                   </div>
@@ -460,8 +489,8 @@ export const InvoiceEditor = () => {
         {/* Total */}
         <div className="flex justify-end">
           <div className="text-right">
-            <div className="text-sm text-white/50 mb-1">Total</div>
-            <div className="text-3xl font-bold text-green-400">
+            <div className="mb-1 text-sm text-white/50">Total</div>
+            <div className="text-2xl font-bold text-green-400 sm:text-3xl">
               {formatCurrency(invoice.total)}
             </div>
           </div>
@@ -469,7 +498,7 @@ export const InvoiceEditor = () => {
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-semibold text-white/80 mb-2">
+          <label className="mb-2 block text-sm font-semibold text-white/80">
             Notes
           </label>
           <textarea
@@ -477,20 +506,20 @@ export const InvoiceEditor = () => {
             onChange={(e) => setInvoice({ ...invoice, notes: e.target.value })}
             disabled={isPaid}
             placeholder="Additional notes or payment instructions..."
-            className="w-full rounded-lg glass-effect px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="glass-effect w-full rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             rows={4}
           />
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-white/10">
-          <div className="flex gap-4">
+        <div className="flex flex-col gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
             {!isPaid && (
               <button
                 type="button"
                 onClick={() => handleSave(id ? undefined : 'draft')}
                 disabled={saving}
-                className="gradient-primary rounded-lg px-6 py-3 font-semibold text-white shadow-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="gradient-primary w-full rounded-lg px-6 py-3 font-semibold text-white shadow-lg transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 {saving ? 'Saving...' : id ? 'Save Changes' : 'Save Draft'}
               </button>
@@ -499,7 +528,7 @@ export const InvoiceEditor = () => {
               type="button"
               onClick={() => navigate('/billing/invoices')}
               disabled={saving}
-              className="rounded-lg glass-effect px-6 py-3 font-semibold text-white/70 transition-all hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="glass-effect w-full rounded-lg px-6 py-3 font-semibold text-white/70 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               Cancel
             </button>
@@ -511,7 +540,7 @@ export const InvoiceEditor = () => {
               type="button"
               onClick={handleDelete}
               disabled={saving}
-              className="rounded-lg glass-effect px-6 py-3 font-semibold text-red-400 transition-all hover:text-red-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="glass-effect w-full rounded-lg px-6 py-3 font-semibold text-red-400 transition-all hover:scale-105 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               🗑️ Delete Invoice
             </button>
