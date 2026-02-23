@@ -58,7 +58,7 @@ export const BillingSettings = () => {
       await updateCompanySettings(settings);
       setSaveMessage('✅ Settings saved successfully!');
       setTimeout(() => setSaveMessage(''), 3000);
-    } catch (error) {
+    } catch {
       setSaveMessage('❌ Failed to save settings');
       setTimeout(() => setSaveMessage(''), 3000);
     }
@@ -79,7 +79,7 @@ export const BillingSettings = () => {
       await updateInvoiceCounter(invoiceCounter.year, invoiceCounter.count);
       setCounterMessage('✅ Invoice counter updated!');
       setTimeout(() => setCounterMessage(''), 3000);
-    } catch (error) {
+    } catch {
       setCounterMessage('❌ Failed to update counter');
       setTimeout(() => setCounterMessage(''), 3000);
     }
@@ -186,6 +186,32 @@ export const BillingSettings = () => {
               placeholder="Payment terms, bank details, thank you message, etc."
               rows={4}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-white/80 mb-2">
+              Tax Set-Aside Percentage
+            </label>
+            <p className="text-sm text-white/50 mb-2">
+              Used on Invoices to calculate estimated taxes from total since Jan 1
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={settings.taxSetAsidePercentage ?? 0}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    taxSetAsidePercentage: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className="w-full rounded-lg glass-effect px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="30"
+              />
+              <span className="text-white/70">%</span>
+            </div>
           </div>
         </div>
 

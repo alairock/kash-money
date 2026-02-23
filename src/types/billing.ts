@@ -2,6 +2,7 @@ export interface Client {
   id: string;
   name: string;
   email: string;
+  invoiceCcEmails?: string[];
   company?: string;
   hourlyRate: number;
   phone?: string;
@@ -27,7 +28,7 @@ export interface Invoice {
   dateSent?: string;
   dateDue: string; // Auto-calculated: dateCreated + 30 days
   datePaid?: string;
-  status: 'draft' | 'sent' | 'paid';
+  status: 'draft' | 'sent' | 'paid' | 'archived';
   lineItems: InvoiceLineItem[];
   total: number; // Sum of all line items
   notes?: string;
@@ -42,4 +43,5 @@ export interface CompanySettings {
   address?: string;
   website?: string;
   defaultInvoiceNotes?: string;
+  taxSetAsidePercentage?: number;
 }

@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getInvoices, updateInvoice, getClient, getCompanySettings } from '../utils/billingStorage';
+import {
+  getInvoices,
+  updateInvoice,
+  getClient,
+  getCompanySettings,
+} from '../utils/billingStorage';
 import type { Invoice, Client, CompanySettings } from '../types/billing';
 import { formatCurrency } from '../utils/formatCurrency';
 import { downloadInvoicePDF } from '../utils/pdfGenerator';
@@ -10,6 +15,8 @@ import { Tooltip } from '../components/Tooltip';
 export const Invoices = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<'all' | Invoice['status']>('all');
+  const [companySettings, setCompanySettings] = useState<CompanySettings | undefined>(undefined);
   const [emailModalData, setEmailModalData] = useState<{
     invoice: Invoice;
     client: Client;
@@ -17,14 +24,23 @@ export const Invoices = () => {
   } | null>(null);
   const navigate = useNavigate();
 
+  const currentYearStart = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return new Date(currentYear, 0, 1);
+  }, []);
+
   useEffect(() => {
     loadInvoices();
   }, []);
 
   const loadInvoices = async () => {
     setLoading(true);
-    const loadedInvoices = await getInvoices();
+    const [loadedInvoices, loadedCompanySettings] = await Promise.all([
+      getInvoices(),
+      getCompanySettings(),
+    ]);
     setInvoices(loadedInvoices);
+    setCompanySettings(loadedCompanySettings);
     setLoading(false);
   };
 
@@ -44,34 +60,77 @@ export const Invoices = () => {
         return 'bg-blue-500/20 text-blue-300';
       case 'paid':
         return 'bg-green-500/20 text-green-300';
+      case 'archived':
+        return 'bg-gray-500/30 text-gray-200';
       default:
         return 'bg-gray-500/20 text-gray-300';
     }
   };
 
+  const totalsSinceYearStart = useMemo(() => {
+    const yearInvoices = invoices.filter((invoice) => new Date(invoice.dateCreated) >= currentYearStart);
+
+    const paid = yearInvoices
+      .filter((invoice) => invoice.status === 'paid')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+
+    const unpaid = yearInvoices
+      .filter((invoice) => invoice.status !== 'paid')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+
+    return {
+      paid,
+      unpaid,
+      combined: paid + unpaid,
+    };
+  }, [invoices, currentYearStart]);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<Invoice['status'], number> = {
+      draft: 0,
+      sent: 0,
+      paid: 0,
+      archived: 0,
+    };
+
+    for (const invoice of invoices) {
+      counts[invoice.status] += 1;
+    }
+
+    return counts;
+  }, [invoices]);
+
+  const filteredInvoices = useMemo(() => {
+    if (statusFilter === 'all') {
+      return invoices;
+    }
+
+    return invoices.filter((invoice) => invoice.status === statusFilter);
+  }, [invoices, statusFilter]);
+
+  const taxSetAsidePercentage = companySettings?.taxSetAsidePercentage || 0;
+  const paidTaxesToBePaid =
+    (totalsSinceYearStart.paid * taxSetAsidePercentage) / 100;
+  const unpaidTaxesToBePaid =
+    (totalsSinceYearStart.unpaid * taxSetAsidePercentage) / 100;
+  const estimatedTaxesToSetAside =
+    (totalsSinceYearStart.combined * taxSetAsidePercentage) / 100;
+  const paidNetAfterTaxes =
+    totalsSinceYearStart.paid - (totalsSinceYearStart.paid * taxSetAsidePercentage) / 100;
+  const unpaidNetAfterTaxes =
+    totalsSinceYearStart.unpaid - (totalsSinceYearStart.unpaid * taxSetAsidePercentage) / 100;
+  const netTotalAfterTaxes =
+    totalsSinceYearStart.combined - estimatedTaxesToSetAside;
+
   const handleMarkAsPaid = async (invoice: Invoice) => {
-    const updated = {
+    const updated: Invoice = {
       ...invoice,
-      status: 'paid' as const,
+      status: 'paid',
       datePaid: new Date().toISOString(),
     };
+
     await updateInvoice(updated);
     setInvoices(invoices.map((inv) => (inv.id === invoice.id ? updated : inv)));
-  };
-
-  const handleUnmarkAsPaid = async (invoice: Invoice) => {
-    // Remove datePaid by excluding it from the updated object
-    const { datePaid, ...invoiceWithoutDatePaid } = invoice;
-
-    // Revert to 'sent' if it was sent, otherwise back to 'draft'
-    const status = invoice.dateSent ? ('sent' as const) : ('draft' as const);
-
-    const updated = {
-      ...invoiceWithoutDatePaid,
-      status,
-    };
-    await updateInvoice(updated as Invoice);
-    setInvoices(invoices.map((inv) => (inv.id === invoice.id ? updated as Invoice : inv)));
   };
 
   const handleDownloadPDF = async (invoice: Invoice) => {
@@ -92,7 +151,7 @@ export const Invoices = () => {
   };
 
   const handleSendEmail = async (invoice: Invoice) => {
-    const company = await getCompanySettings();
+    const company = companySettings || (await getCompanySettings());
     const client = await getClient(invoice.clientId);
 
     if (!company || !company.companyName || !company.email) {
@@ -122,12 +181,109 @@ export const Invoices = () => {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Invoices</h2>
+      <div className="mb-6 grid gap-4 md:grid-cols-4">
+        <div className="glass-dark rounded-xl p-4">
+          <p className="text-sm text-white/60">Paid since Jan 1</p>
+          <p className="mt-1 text-2xl font-bold text-green-400">
+            {formatCurrency(totalsSinceYearStart.paid)}
+          </p>
+          <p className="mt-1 text-xs text-white/60">
+            Net after taxes: {formatCurrency(paidNetAfterTaxes)}
+          </p>
+          <p className="mt-1 text-xs text-white/50">
+            Taxes to be paid: {formatCurrency(paidTaxesToBePaid)}
+          </p>
+        </div>
+        <div className="glass-dark rounded-xl p-4">
+          <p className="text-sm text-white/60">Unpaid since Jan 1</p>
+          <p className="mt-1 text-2xl font-bold text-yellow-300">
+            {formatCurrency(totalsSinceYearStart.unpaid)}
+          </p>
+          <p className="mt-1 text-xs text-white/60">
+            Net after taxes: {formatCurrency(unpaidNetAfterTaxes)}
+          </p>
+          <p className="mt-1 text-xs text-white/50">
+            Taxes to be paid: {formatCurrency(unpaidTaxesToBePaid)}
+          </p>
+        </div>
+        <div className="glass-dark rounded-xl p-4">
+          <p className="text-sm text-white/60">Total since Jan 1</p>
+          <p className="mt-1 text-2xl font-bold text-white">
+            {formatCurrency(totalsSinceYearStart.combined)}
+          </p>
+          <p className="mt-1 text-xs text-white/60">
+            Net after taxes: {formatCurrency(netTotalAfterTaxes)}
+          </p>
+          <p className="mt-1 text-xs text-white/50">
+            Taxes to be paid: {formatCurrency(estimatedTaxesToSetAside)}
+          </p>
+        </div>
+        <div className="glass-dark rounded-xl p-4">
+          <p className="text-sm text-white/60">Estimated Taxes to Set Aside</p>
+          <p className="mt-1 text-2xl font-bold text-orange-300">
+            {formatCurrency(estimatedTaxesToSetAside)}
+          </p>
+          <p className="mt-1 text-xs text-white/50">
+            {taxSetAsidePercentage}% of total since Jan 1
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-2 text-sm">
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            className={`rounded px-3 py-1 transition-colors ${
+              statusFilter === 'all' ? 'bg-white/20 text-white' : 'glass-effect text-white/70 hover:text-white'
+            }`}
+          >
+            All ({invoices.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('draft')}
+            className={`rounded px-3 py-1 transition-colors ${
+              statusFilter === 'draft' ? 'bg-yellow-500/20 text-yellow-300' : 'glass-effect text-white/70 hover:text-white'
+            }`}
+          >
+            Draft ({statusCounts.draft})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('sent')}
+            className={`rounded px-3 py-1 transition-colors ${
+              statusFilter === 'sent' ? 'bg-blue-500/20 text-blue-300' : 'glass-effect text-white/70 hover:text-white'
+            }`}
+          >
+            Sent ({statusCounts.sent})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('paid')}
+            className={`rounded px-3 py-1 transition-colors ${
+              statusFilter === 'paid' ? 'bg-green-500/20 text-green-300' : 'glass-effect text-white/70 hover:text-white'
+            }`}
+          >
+            Paid ({statusCounts.paid})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('archived')}
+            className={`rounded px-3 py-1 transition-colors ${
+              statusFilter === 'archived'
+                ? 'bg-gray-500/30 text-gray-200'
+                : 'glass-effect text-white/70 hover:text-white'
+            }`}
+          >
+            Archived ({statusCounts.archived})
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={() => navigate('/billing/invoices/new')}
-          className="gradient-primary rounded-lg px-6 py-3 font-semibold text-white shadow-lg transition-all hover:scale-105"
+          className="ml-auto gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105"
         >
           ✨ Create New Invoice
         </button>
@@ -169,7 +325,7 @@ export const Invoices = () => {
               </tr>
             </thead>
             <tbody>
-              {invoices.map((invoice) => (
+              {filteredInvoices.map((invoice) => (
                 <tr
                   key={invoice.id}
                   className="border-b border-white/5 hover:bg-white/5 transition-colors"
@@ -196,6 +352,7 @@ export const Invoices = () => {
                         {invoice.status}
                       </span>
                     )}
+
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-white/70 text-sm">
@@ -214,15 +371,7 @@ export const Invoices = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/billing/invoices/${invoice.id}/edit`)}
-                        className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
-                        title="Edit"
-                      >
-                        Edit
-                      </button>
-                      {invoice.status !== 'paid' ? (
+                      {invoice.status !== 'paid' && (
                         <button
                           type="button"
                           onClick={() => handleMarkAsPaid(invoice)}
@@ -231,16 +380,15 @@ export const Invoices = () => {
                         >
                           Paid
                         </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleUnmarkAsPaid(invoice)}
-                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-yellow-400 transition-all hover:scale-105"
-                          title="Unmark as Paid"
-                        >
-                          Unpaid
-                        </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/billing/invoices/${invoice.id}/edit`)}
+                        className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                        title="Edit"
+                      >
+                        Edit
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleDownloadPDF(invoice)}

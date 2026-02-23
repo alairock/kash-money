@@ -10,6 +10,7 @@ const postmarkToken = defineSecret('POSTMARK_API_TOKEN');
 
 interface SendInvoiceEmailData {
   to: string;
+  cc?: string[];
   from: string;
   replyTo: string;
   subject: string;
@@ -48,6 +49,7 @@ export const sendInvoiceEmail = onCall(
       const result = await client.sendEmail({
         From: data.from,
         To: data.to,
+        Cc: data.cc && data.cc.length > 0 ? data.cc.join(',') : undefined,
         ReplyTo: data.replyTo || data.from,
         Subject: data.subject,
         HtmlBody: data.htmlBody,

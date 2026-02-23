@@ -22,7 +22,8 @@ export const sendInvoiceEmail = async (
   invoice: Invoice,
   client: Client,
   emailBody: string,
-  pdfBlob: Blob
+  pdfBlob: Blob,
+  cc?: string[]
 ): Promise<void> => {
   console.log('📧 Sending invoice email via Postmark...');
   console.log('To:', client.email);
@@ -43,6 +44,7 @@ export const sendInvoiceEmail = async (
     const sendEmail = httpsCallable(functions, 'sendInvoiceEmail');
     const result = await sendEmail({
       to: client.email,
+      cc: cc || [],
       from: 'skyler@sixteenink.com', // Verified sender signature
       replyTo: company.email, // User's email for replies
       subject: `Invoice ${invoice.invoiceNumber}`,

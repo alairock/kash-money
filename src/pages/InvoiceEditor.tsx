@@ -109,6 +109,20 @@ export const InvoiceEditor = () => {
     setInvoice({ ...invoice, dateCreated, dateDue });
   };
 
+  const handleStatusChange = (status: Invoice['status']) => {
+    const updatedInvoice: Invoice = { ...invoice, status };
+
+    if (status === 'paid' && !invoice.datePaid) {
+      updatedInvoice.datePaid = new Date().toISOString();
+    }
+
+    if (status !== 'paid' && invoice.datePaid) {
+      delete updatedInvoice.datePaid;
+    }
+
+    setInvoice(updatedInvoice);
+  };
+
   const addLineItem = () => {
     const selectedClient = clients.find((c) => c.id === invoice.clientId);
     const newItem: InvoiceLineItem = {
@@ -313,6 +327,24 @@ export const InvoiceEditor = () => {
           />
         </div>
 
+        {!isPaid && (
+          <div>
+            <label className="block text-sm font-semibold text-white/80 mb-2">
+              Status
+            </label>
+            <select
+              value={invoice.status}
+              onChange={(e) => handleStatusChange(e.target.value as Invoice['status'])}
+              className="w-full rounded-lg glass-effect px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="paid">Paid</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        )}
+
         {/* Line Items */}
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -456,11 +488,11 @@ export const InvoiceEditor = () => {
             {!isPaid && (
               <button
                 type="button"
-                onClick={() => handleSave('draft')}
+                onClick={() => handleSave(id ? undefined : 'draft')}
                 disabled={saving}
                 className="gradient-primary rounded-lg px-6 py-3 font-semibold text-white shadow-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? 'Saving...' : 'Save Draft'}
+                {saving ? 'Saving...' : id ? 'Save Changes' : 'Save Draft'}
               </button>
             )}
             <button
