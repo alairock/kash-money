@@ -1,10 +1,17 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  getInvoices,
+  getInvoicesPage,
   updateInvoice,
   getClient,
   getCompanySettings,
+  getInvoicesCount,
+  getInvoiceStatusCounts,
+  getInvoiceTotalsSinceYearStart,
+  getInvoicesCreatedThisMonthCount,
+  type InvoicesPageCursor,
+  type InvoiceStatusFilter,
+  type InvoiceTotalsSummary,
 } from '../utils/billingStorage';
 import type { Invoice, Client, CompanySettings } from '../types/billing';
 import { formatCurrency } from '../utils/formatCurrency';
@@ -12,7 +19,9 @@ import { downloadInvoicePDF } from '../utils/pdfGenerator';
 import { EmailPreviewModal } from '../components/EmailPreviewModal';
 import { Tooltip } from '../components/Tooltip';
 import { getCurrentUserLimits } from '../utils/superAdminStorage';
-import { countItemsCreatedThisMonth, PLAN_LIMIT_REACHED_TOOLTIP } from '../utils/limits';
+import { PLAN_LIMIT_REACHED_TOOLTIP } from '../utils/limits';
+
+const ITEMS_PER_PAGE = 10;
 
 export const Invoices = () => {
   const primaryButtonClass =
@@ -23,45 +32,127 @@ export const Invoices = () => {
     'glass-effect rounded-xl px-3 py-1 text-sm font-semibold text-green-300 transition-all hover:scale-105';
   const infoActionButtonClass =
     'glass-effect rounded-xl px-3 py-1 text-sm font-semibold text-blue-300 transition-all hover:scale-105';
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<'all' | Invoice['status']>('all');
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatusFilter>('all');
   const [companySettings, setCompanySettings] = useState<CompanySettings | undefined>(undefined);
   const [invoiceLimit, setInvoiceLimit] = useState(2);
+  const [invoicesThisMonth, setInvoicesThisMonth] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalInvoices, setTotalInvoices] = useState(0);
+  const [totalFilteredInvoices, setTotalFilteredInvoices] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [statusCounts, setStatusCounts] = useState<Record<Invoice['status'], number>>({
+    draft: 0,
+    sent: 0,
+    paid: 0,
+    archived: 0,
+  });
+  const [totalsSinceYearStart, setTotalsSinceYearStart] = useState<InvoiceTotalsSummary>({
+    paid: 0,
+    unpaid: 0,
+    combined: 0,
+  });
   const [emailModalData, setEmailModalData] = useState<{
     invoice: Invoice;
     client: Client;
     company: CompanySettings;
   } | null>(null);
+
+  const pageCursorsRef = useRef<InvoicesPageCursor[]>([null]);
+  const hasLoadedOnceRef = useRef(false);
   const navigate = useNavigate();
 
-  const currentYearStart = useMemo(() => {
+  const currentYearStartIso = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    return new Date(currentYear, 0, 1);
+    return new Date(currentYear, 0, 1).toISOString();
   }, []);
+
+  const loadInvoices = useCallback(
+    async ({
+      page = 1,
+      filter,
+      resetCursors = false,
+      showInitialLoader = false,
+    }: {
+      page?: number;
+      filter: InvoiceStatusFilter;
+      resetCursors?: boolean;
+      showInitialLoader?: boolean;
+    }) => {
+      if (showInitialLoader) {
+        setInitialLoading(true);
+      } else {
+        setListLoading(true);
+      }
+      try {
+        if (resetCursors) {
+          pageCursorsRef.current = [null];
+        }
+
+        const [
+          loadedCompanySettings,
+          limits,
+          loadedTotalInvoices,
+          loadedStatusCounts,
+          loadedTotalsSinceYearStart,
+          loadedInvoicesThisMonth,
+          loadedFilteredCount,
+        ] = await Promise.all([
+          getCompanySettings(),
+          getCurrentUserLimits(),
+          getInvoicesCount('all'),
+          getInvoiceStatusCounts(),
+          getInvoiceTotalsSinceYearStart(currentYearStartIso),
+          getInvoicesCreatedThisMonthCount(),
+          getInvoicesCount(filter),
+        ]);
+
+        const safePage = Math.min(page, Math.max(1, Math.ceil(loadedFilteredCount / ITEMS_PER_PAGE)));
+        const pageCursor = pageCursorsRef.current[safePage - 1] ?? null;
+        const loadedPage = await getInvoicesPage({
+          pageSize: ITEMS_PER_PAGE,
+          cursor: pageCursor,
+          status: filter,
+        });
+
+        setInvoices(loadedPage.invoices);
+        setHasNextPage(loadedPage.hasMore);
+        setCurrentPage(safePage);
+        setTotalInvoices(loadedTotalInvoices);
+        setTotalFilteredInvoices(loadedFilteredCount);
+        setStatusCounts(loadedStatusCounts);
+        setTotalsSinceYearStart(loadedTotalsSinceYearStart);
+        setInvoicesThisMonth(loadedInvoicesThisMonth);
+        setCompanySettings(loadedCompanySettings);
+        setInvoiceLimit(limits.invoicesPerMonth);
+
+        if (loadedPage.hasMore && loadedPage.nextCursor) {
+          pageCursorsRef.current[safePage] = loadedPage.nextCursor;
+        } else {
+          pageCursorsRef.current = pageCursorsRef.current.slice(0, safePage);
+        }
+      } catch (error) {
+        console.error('Error loading invoices:', error);
+        setInvoices([]);
+      } finally {
+        if (showInitialLoader) {
+          setInitialLoading(false);
+        } else {
+          setListLoading(false);
+        }
+      }
+    },
+    [currentYearStartIso],
+  );
 
   useEffect(() => {
-    loadInvoices();
-  }, []);
-
-  const loadInvoices = async () => {
-    setLoading(true);
-    try {
-      const [loadedInvoices, loadedCompanySettings, limits] = await Promise.all([
-        getInvoices(),
-        getCompanySettings(),
-        getCurrentUserLimits(),
-      ]);
-      setInvoices(loadedInvoices);
-      setCompanySettings(loadedCompanySettings);
-      setInvoiceLimit(limits.invoicesPerMonth);
-    } catch (error) {
-      console.error('Error loading invoices:', error);
-      setInvoices([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const showInitialLoader = !hasLoadedOnceRef.current;
+    hasLoadedOnceRef.current = true;
+    loadInvoices({ page: 1, filter: statusFilter, resetCursors: true, showInitialLoader });
+  }, [loadInvoices, statusFilter]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -86,49 +177,10 @@ export const Invoices = () => {
     }
   };
 
-  const totalsSinceYearStart = useMemo(() => {
-    const yearInvoices = invoices.filter((invoice) => new Date(invoice.dateCreated) >= currentYearStart);
-
-    const paid = yearInvoices
-      .filter((invoice) => invoice.status === 'paid')
-      .reduce((sum, invoice) => sum + invoice.total, 0);
-
-    const unpaid = yearInvoices
-      .filter((invoice) => invoice.status !== 'paid')
-      .reduce((sum, invoice) => sum + invoice.total, 0);
-
-    return {
-      paid,
-      unpaid,
-      combined: paid + unpaid,
-    };
-  }, [invoices, currentYearStart]);
-
-  const statusCounts = useMemo(() => {
-    const counts: Record<Invoice['status'], number> = {
-      draft: 0,
-      sent: 0,
-      paid: 0,
-      archived: 0,
-    };
-
-    for (const invoice of invoices) {
-      counts[invoice.status] += 1;
-    }
-
-    return counts;
-  }, [invoices]);
-
-  const filteredInvoices = useMemo(() => {
-    if (statusFilter === 'all') {
-      return invoices;
-    }
-
-    return invoices.filter((invoice) => invoice.status === statusFilter);
-  }, [invoices, statusFilter]);
-
-  const invoicesThisMonth = useMemo(() => countItemsCreatedThisMonth(invoices), [invoices]);
   const createInvoiceDisabled = invoicesThisMonth >= invoiceLimit;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredInvoices / ITEMS_PER_PAGE));
+  const rangeStart = totalFilteredInvoices > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const rangeEnd = rangeStart > 0 ? rangeStart + invoices.length - 1 : 0;
 
   const taxSetAsidePercentage = companySettings?.taxSetAsidePercentage || 0;
   const paidTaxesToBePaid =
@@ -152,7 +204,7 @@ export const Invoices = () => {
     };
 
     await updateInvoice(updated);
-    setInvoices(invoices.map((inv) => (inv.id === invoice.id ? updated : inv)));
+    await loadInvoices({ page: currentPage, filter: statusFilter });
   };
 
   const handleDownloadPDF = async (invoice: Invoice) => {
@@ -190,10 +242,10 @@ export const Invoices = () => {
   };
 
   const handleEmailSent = () => {
-    loadInvoices(); // Reload to get updated status
+    loadInvoices({ page: currentPage, filter: statusFilter });
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="text-xl text-white/70">Loading invoices...</div>
@@ -260,7 +312,7 @@ export const Invoices = () => {
               statusFilter === 'all' ? 'bg-white/20 text-white' : 'glass-effect text-white/70 hover:text-white'
             }`}
           >
-            All ({invoices.length})
+            All ({totalInvoices})
           </button>
           <button
             type="button"
@@ -316,7 +368,11 @@ export const Invoices = () => {
         </div>
       </div>
 
-      {invoices.length === 0 ? (
+      {listLoading && (
+        <div className="mb-4 text-sm text-white/70">Refreshing invoices...</div>
+      )}
+
+      {totalFilteredInvoices === 0 ? (
         <div className="glass-dark p-12 text-center rounded-xl">
           <p className="text-xl text-white/70">No invoices yet</p>
           <p className="text-sm text-white/50 mt-2">
@@ -324,9 +380,9 @@ export const Invoices = () => {
           </p>
         </div>
       ) : (
-        <>
+        <div className={listLoading ? 'opacity-70 transition-opacity' : ''}>
           <div className="space-y-3 lg:hidden">
-            {filteredInvoices.map((invoice) => (
+            {invoices.map((invoice) => (
               <div key={invoice.id} className="glass-dark rounded-xl p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -432,7 +488,7 @@ export const Invoices = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredInvoices.map((invoice) => (
+                {invoices.map((invoice) => (
                   <tr
                     key={invoice.id}
                     className="border-b border-white/5 hover:bg-white/5 transition-colors"
@@ -520,7 +576,43 @@ export const Invoices = () => {
               </tbody>
             </table>
           </div>
-        </>
+
+          {totalFilteredInvoices > ITEMS_PER_PAGE && (
+            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-white/80">
+                Showing {rangeStart}-{rangeEnd} of {totalFilteredInvoices}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const previousPage = Math.max(1, currentPage - 1);
+                    loadInvoices({ page: previousPage, filter: statusFilter });
+                  }}
+                  disabled={currentPage === 1 || listLoading}
+                  className="rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span className="text-sm font-semibold text-white/90">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (hasNextPage) {
+                      loadInvoices({ page: currentPage + 1, filter: statusFilter });
+                    }
+                  }}
+                  disabled={!hasNextPage || listLoading}
+                  className="rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {emailModalData && (

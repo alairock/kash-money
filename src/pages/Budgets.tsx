@@ -1,11 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Budget, BudgetLineItem } from '../types/budget';
-import { getBudgets, createBudget, deleteBudget, getRecurringExpenses } from '../utils/storage';
+import {
+	getBudgetsPage,
+	createBudget,
+	deleteBudget,
+	getRecurringExpenses,
+	getBudgetsCount,
+	getBudgetsCreatedThisMonthCount,
+	type BudgetsPageCursor,
+} from '../utils/storage';
 import { formatCurrency } from '../utils/formatCurrency';
 import { getCurrentUserLimits } from '../utils/superAdminStorage';
-import { countItemsCreatedThisMonth, isPlanLimitError, PLAN_LIMIT_REACHED_TOOLTIP } from '../utils/limits';
+import { isPlanLimitError, PLAN_LIMIT_REACHED_TOOLTIP } from '../utils/limits';
 import { Tooltip } from '../components/Tooltip';
+
+const ITEMS_PER_PAGE = 10;
 
 export const Budgets = () => {
 	const navigate = useNavigate();
@@ -19,14 +29,39 @@ export const Budgets = () => {
 	const [startingAmount, setStartingAmount] = useState('0');
 	const [loading, setLoading] = useState(true);
 	const [budgetLimit, setBudgetLimit] = useState(1);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [totalBudgets, setTotalBudgets] = useState(0);
+	const [budgetsThisMonth, setBudgetsThisMonth] = useState(0);
+	const [hasNextPage, setHasNextPage] = useState(false);
+	const pageCursorsRef = useRef<BudgetsPageCursor[]>([null]);
 
-	const loadBudgets = useCallback(async () => {
+	const loadBudgets = useCallback(async (page = 1) => {
 		try {
-			const [loadedBudgets, limits] = await Promise.all([getBudgets(), getCurrentUserLimits()]);
-			// Sort by date descending (newest first)
-			loadedBudgets.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime());
-			setBudgets(loadedBudgets);
+			setLoading(true);
+			const [limits, loadedTotalBudgets, loadedBudgetsThisMonth] = await Promise.all([
+				getCurrentUserLimits(),
+				getBudgetsCount(),
+				getBudgetsCreatedThisMonthCount(),
+			]);
+			const safePage = Math.min(page, Math.max(1, Math.ceil(loadedTotalBudgets / ITEMS_PER_PAGE)));
+			const pageCursor = pageCursorsRef.current[safePage - 1] ?? null;
+			const loadedPage = await getBudgetsPage({
+				pageSize: ITEMS_PER_PAGE,
+				cursor: pageCursor,
+			});
+
+			setBudgets(loadedPage.budgets);
+			setHasNextPage(loadedPage.hasMore);
+			setCurrentPage(safePage);
+			setTotalBudgets(loadedTotalBudgets);
+			setBudgetsThisMonth(loadedBudgetsThisMonth);
 			setBudgetLimit(limits.budgetsPerMonth);
+
+			if (loadedPage.hasMore && loadedPage.nextCursor) {
+				pageCursorsRef.current[safePage] = loadedPage.nextCursor;
+			} else {
+				pageCursorsRef.current = pageCursorsRef.current.slice(0, safePage);
+			}
 		} catch (error) {
 			console.error('Error loading budgets:', error);
 		} finally {
@@ -38,8 +73,10 @@ export const Budgets = () => {
 		loadBudgets();
 	}, [loadBudgets]);
 
-	const budgetsThisMonth = countItemsCreatedThisMonth(budgets);
 	const createBudgetDisabled = budgetsThisMonth >= budgetLimit;
+	const totalPages = Math.max(1, Math.ceil(totalBudgets / ITEMS_PER_PAGE));
+	const rangeStart = totalBudgets > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+	const rangeEnd = rangeStart > 0 ? rangeStart + budgets.length - 1 : 0;
 
 	const handleCreateBudget = async () => {
 		if (createBudgetDisabled) {
@@ -111,7 +148,12 @@ export const Budgets = () => {
 	const handleDelete = async (id: string) => {
 		if (confirm('Are you sure you want to delete this budget?')) {
 			await deleteBudget(id);
-			loadBudgets();
+			const nextTotal = Math.max(0, totalBudgets - 1);
+			const nextPage = Math.min(currentPage, Math.max(1, Math.ceil(nextTotal / ITEMS_PER_PAGE)));
+			if (nextPage === 1) {
+				pageCursorsRef.current = [null];
+			}
+			loadBudgets(nextPage);
 		}
 	};
 
@@ -145,7 +187,7 @@ export const Budgets = () => {
 				<div className="glass-effect rounded-2xl p-12 text-center shadow-xl">
 					<p className="text-xl text-white/80">Loading budgets...</p>
 				</div>
-			) : budgets.length === 0 ? (
+			) : totalBudgets === 0 ? (
 				<div className="glass-effect rounded-2xl p-12 text-center shadow-xl">
 					<p className="text-xl text-white/80">No budgets yet. Create your first budget to get started! 🚀</p>
 				</div>
@@ -224,6 +266,42 @@ export const Budgets = () => {
 							</tbody>
 						</table>
 					</div>
+
+					{totalBudgets > ITEMS_PER_PAGE && (
+						<div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+							<p className="text-sm text-white/80">
+								Showing {rangeStart}-{rangeEnd} of {totalBudgets}
+							</p>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={() => {
+										const previousPage = Math.max(1, currentPage - 1);
+										loadBudgets(previousPage);
+									}}
+									disabled={currentPage === 1}
+									className="rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									Previous
+								</button>
+								<span className="text-sm font-semibold text-white/90">
+									Page {currentPage} of {totalPages}
+								</span>
+								<button
+									type="button"
+									onClick={() => {
+										if (hasNextPage) {
+											loadBudgets(currentPage + 1);
+										}
+									}}
+									disabled={!hasNextPage}
+									className="rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									Next
+								</button>
+							</div>
+						</div>
+					)}
 				</>
 			)}
 

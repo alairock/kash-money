@@ -1,10 +1,19 @@
-import { useState, useEffect } from 'react';
-import { getClients, createClient, updateClient, deleteClient } from '../utils/billingStorage';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  getClientsPage,
+  getClientsCount,
+  createClient,
+  updateClient,
+  deleteClient,
+  type ClientsPageCursor,
+} from '../utils/billingStorage';
 import type { Client } from '../types/billing';
 import { formatCurrency } from '../utils/formatCurrency';
 import { getCurrentUserLimits } from '../utils/superAdminStorage';
 import { isPlanLimitError, PLAN_LIMIT_REACHED_TOOLTIP } from '../utils/limits';
 import { Tooltip } from '../components/Tooltip';
+
+const ITEMS_PER_PAGE = 3;
 
 export const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -12,26 +21,50 @@ export const Clients = () => {
   const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [clientLimit, setClientLimit] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalClients, setTotalClients] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
 
-  useEffect(() => {
-    loadClients();
-  }, []);
+  const pageCursorsRef = useRef<ClientsPageCursor[]>([null]);
 
-  const loadClients = async () => {
+  const loadClients = useCallback(async (page = 1) => {
     setLoading(true);
     try {
-      const [loadedClients, limits] = await Promise.all([getClients(), getCurrentUserLimits()]);
-      setClients(loadedClients);
+      const [loadedTotalClients, limits] = await Promise.all([getClientsCount(), getCurrentUserLimits()]);
+      const safePage = Math.min(page, Math.max(1, Math.ceil(loadedTotalClients / ITEMS_PER_PAGE)));
+      const pageCursor = pageCursorsRef.current[safePage - 1] ?? null;
+      const loadedPage = await getClientsPage({
+        pageSize: ITEMS_PER_PAGE,
+        cursor: pageCursor,
+      });
+
+      setClients(loadedPage.clients);
+      setHasNextPage(loadedPage.hasMore);
+      setCurrentPage(safePage);
+      setTotalClients(loadedTotalClients);
       setClientLimit(limits.clients);
+
+      if (loadedPage.hasMore && loadedPage.nextCursor) {
+        pageCursorsRef.current[safePage] = loadedPage.nextCursor;
+      } else {
+        pageCursorsRef.current = pageCursorsRef.current.slice(0, safePage);
+      }
     } catch (error) {
       console.error('Error loading clients:', error);
       setClients([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const addClientDisabled = clients.length >= clientLimit;
+  useEffect(() => {
+    loadClients();
+  }, [loadClients]);
+
+  const addClientDisabled = totalClients >= clientLimit;
+  const totalPages = Math.max(1, Math.ceil(totalClients / ITEMS_PER_PAGE));
+  const rangeStart = totalClients > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const rangeEnd = rangeStart > 0 ? rangeStart + clients.length - 1 : 0;
 
   const handleAddClient = async () => {
     if (addClientDisabled) {
@@ -52,9 +85,9 @@ export const Clients = () => {
 
     try {
       await createClient(newClient);
-      setClients([...clients, newClient]);
       setEditingClient(newClient);
       setNewlyCreatedId(newClient.id);
+      setTotalClients((previous) => previous + 1);
     } catch (error) {
       if (isPlanLimitError(error)) {
         alert(PLAN_LIMIT_REACHED_TOOLTIP);
@@ -67,7 +100,7 @@ export const Clients = () => {
   };
 
   const handleEditClient = (client: Client) => {
-    setEditingClient({ ...client }); // Create a copy for editing
+    setEditingClient({ ...client });
   };
 
   const handleUpdateEditingClient = (updates: Partial<Client>) => {
@@ -79,15 +112,24 @@ export const Clients = () => {
   const handleDeleteClient = async (id: string) => {
     if (confirm('Are you sure you want to delete this client?')) {
       await deleteClient(id);
-      setClients(clients.filter((c) => c.id !== id));
+      const nextTotal = Math.max(0, totalClients - 1);
+      const nextPage = Math.min(currentPage, Math.max(1, Math.ceil(nextTotal / ITEMS_PER_PAGE)));
+      if (nextPage === 1) {
+        pageCursorsRef.current = [null];
+      }
+      await loadClients(nextPage);
     }
   };
 
   const handleCancelEdit = async () => {
     if (editingClient && editingClient.id === newlyCreatedId) {
       await deleteClient(editingClient.id);
-      setClients(clients.filter((c) => c.id !== editingClient.id));
       setNewlyCreatedId(null);
+      setTotalClients((previous) => Math.max(0, previous - 1));
+      if (currentPage === 1) {
+        pageCursorsRef.current = [null];
+      }
+      await loadClients(currentPage);
     }
     setEditingClient(null);
   };
@@ -95,7 +137,6 @@ export const Clients = () => {
   const handleSaveEdit = async () => {
     if (!editingClient) return;
 
-    // Validation
     if (!editingClient.name || !editingClient.email) {
       alert('Name and email are required');
       return;
@@ -105,14 +146,14 @@ export const Clients = () => {
       return;
     }
 
-    // Save to Firestore
     await updateClient(editingClient);
-
-    // Update local state
-    setClients(clients.map((c) => (c.id === editingClient.id ? editingClient : c)));
 
     setNewlyCreatedId(null);
     setEditingClient(null);
+    if (currentPage === 1) {
+      pageCursorsRef.current = [null];
+    }
+    await loadClients(currentPage);
   };
 
   if (loading) {
@@ -123,7 +164,6 @@ export const Clients = () => {
     );
   }
 
-  // Show edit form when editing a client
   if (editingClient) {
     return (
       <div className="max-w-2xl">
@@ -247,7 +287,6 @@ export const Clients = () => {
     );
   }
 
-  // Show clients list
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -266,7 +305,7 @@ export const Clients = () => {
         </Tooltip>
       </div>
 
-      {clients.length === 0 ? (
+      {totalClients === 0 ? (
         <div className="glass-dark p-12 text-center rounded-xl">
           <p className="text-xl text-white/70">No clients yet</p>
           <p className="text-sm text-white/50 mt-2">
@@ -375,6 +414,42 @@ export const Clients = () => {
               </tbody>
             </table>
           </div>
+
+          {totalClients > ITEMS_PER_PAGE && (
+            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-white/80">
+                Showing {rangeStart}-{rangeEnd} of {totalClients}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const previousPage = Math.max(1, currentPage - 1);
+                    loadClients(previousPage);
+                  }}
+                  disabled={currentPage === 1}
+                  className="rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span className="text-sm font-semibold text-white/90">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (hasNextPage) {
+                      loadClients(currentPage + 1);
+                    }
+                  }}
+                  disabled={!hasNextPage}
+                  className="rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

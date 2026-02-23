@@ -1,7 +1,11 @@
 import {
   collection,
+  type DocumentData,
+  type QueryDocumentSnapshot,
+  type QueryConstraint,
   doc,
   getDocs,
+  getCountFromServer,
   getDoc,
   addDoc,
   setDoc,
@@ -9,6 +13,9 @@ import {
   deleteDoc,
   query,
   orderBy,
+  where,
+  startAfter,
+  limit,
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import type { Budget, RecurringExpense } from '../types/budget';
@@ -17,6 +24,14 @@ import { countItemsCreatedThisMonth, createPlanLimitError } from './limits';
 
 const BUDGETS_COLLECTION = 'budgets';
 const RECURRING_EXPENSES_COLLECTION = 'recurringExpenses';
+
+export type BudgetsPageCursor = QueryDocumentSnapshot<DocumentData> | null;
+
+export interface BudgetsPageResult {
+  budgets: Budget[];
+  hasMore: boolean;
+  nextCursor: BudgetsPageCursor;
+}
 
 // Helper to get user ID from authenticated user
 const getUserId = () => {
@@ -41,6 +56,72 @@ export const getBudgets = async (): Promise<Budget[]> => {
   } catch (error) {
     console.error('Error getting budgets:', error);
     return [];
+  }
+};
+
+export const getBudgetsPage = async ({
+  pageSize = 10,
+  cursor = null,
+}: {
+  pageSize?: number;
+  cursor?: BudgetsPageCursor;
+}): Promise<BudgetsPageResult> => {
+  try {
+    const userId = getUserId();
+    const budgetsRef = collection(db, 'users', userId, BUDGETS_COLLECTION);
+    const constraints: QueryConstraint[] = [orderBy('dateCreated', 'desc')];
+    if (cursor) {
+      constraints.push(startAfter(cursor));
+    }
+    constraints.push(limit(pageSize + 1));
+
+    const snapshot = await getDocs(query(budgetsRef, ...constraints));
+    const hasMore = snapshot.docs.length > pageSize;
+    const pageDocs = hasMore ? snapshot.docs.slice(0, pageSize) : snapshot.docs;
+
+    return {
+      budgets: pageDocs.map((docSnapshot) => ({
+        id: docSnapshot.id,
+        ...docSnapshot.data(),
+      })) as Budget[],
+      hasMore,
+      nextCursor: pageDocs.length > 0 ? pageDocs[pageDocs.length - 1] : null,
+    };
+  } catch (error) {
+    console.error('Error getting budgets page:', error);
+    return {
+      budgets: [],
+      hasMore: false,
+      nextCursor: null,
+    };
+  }
+};
+
+export const getBudgetsCount = async (): Promise<number> => {
+  try {
+    const userId = getUserId();
+    const budgetsRef = collection(db, 'users', userId, BUDGETS_COLLECTION);
+    const snapshot = await getCountFromServer(query(budgetsRef));
+    return snapshot.data().count;
+  } catch (error) {
+    console.error('Error getting budgets count:', error);
+    return 0;
+  }
+};
+
+export const getBudgetsCreatedThisMonthCount = async (): Promise<number> => {
+  try {
+    const userId = getUserId();
+    const budgetsRef = collection(db, 'users', userId, BUDGETS_COLLECTION);
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const q = query(budgetsRef, where('dateCreated', '>=', monthStart.toISOString()));
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
+  } catch (error) {
+    console.error('Error getting monthly budgets count:', error);
+    return 0;
   }
 };
 
