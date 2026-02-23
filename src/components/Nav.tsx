@@ -75,9 +75,6 @@ export const Nav = () => {
 								<NavLink to="/budgets" className={linkClass}>
 									💰 Budgets
 								</NavLink>
-								<NavLink to="/recurring-expenses" className={linkClass}>
-									💸 Recurring Expenses
-								</NavLink>
 								<NavLink to="/billing" className={linkClass}>
 									📄 Invoicing
 								</NavLink>
@@ -151,13 +148,6 @@ export const Nav = () => {
 											onClick={() => setMobileMenuOpen(false)}
 										>
 											Budgets
-										</NavLink>
-										<NavLink
-											to="/recurring-expenses"
-											className={mobileLinkClass}
-											onClick={() => setMobileMenuOpen(false)}
-										>
-											Recurring Expenses
 										</NavLink>
 										<NavLink
 											to="/billing"

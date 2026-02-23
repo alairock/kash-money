@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Nav } from './components/Nav';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { BudgetsLayout } from './pages/BudgetsLayout';
 import { Budgets } from './pages/Budgets';
 import { BudgetView } from './pages/BudgetView';
 import { RecurringExpenses } from './pages/RecurringExpenses';
@@ -29,26 +30,15 @@ export const App = () => {
             path="/budgets"
             element={
               <ProtectedRoute>
-                <Budgets />
+                <BudgetsLayout />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/budgets/:id"
-            element={
-              <ProtectedRoute>
-                <BudgetView />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/recurring-expenses"
-            element={
-              <ProtectedRoute>
-                <RecurringExpenses />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route index element={<Budgets />} />
+            <Route path="recurring" element={<RecurringExpenses />} />
+            <Route path=":id" element={<BudgetView />} />
+          </Route>
+          <Route path="/recurring-expenses" element={<Navigate to="/budgets/recurring" replace />} />
           <Route
             path="/billing"
             element={

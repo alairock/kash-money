@@ -116,8 +116,7 @@ export const RecurringExpenses = () => {
 
 	return (
 		<div className="mx-auto max-w-6xl p-4 sm:p-6">
-			<div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-				<h1 className="text-3xl font-black leading-tight text-shadow-glow sm:text-4xl">💸 Recurring Expenses</h1>
+			<div className="mb-6 flex justify-end sm:mb-8">
 				<button
 					type="button"
 					onClick={handleAddExpense}
