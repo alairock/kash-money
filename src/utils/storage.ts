@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import type { Budget, RecurringExpense } from '../types/budget';
+import { getCurrentUserLimits } from './superAdminStorage';
+import { countItemsCreatedThisMonth, createPlanLimitError } from './limits';
 
 const BUDGETS_COLLECTION = 'budgets';
 const RECURRING_EXPENSES_COLLECTION = 'recurringExpenses';
@@ -60,6 +62,11 @@ export const getBudget = async (id: string): Promise<Budget | undefined> => {
 export const createBudget = async (budget: Budget): Promise<void> => {
   try {
     const userId = getUserId();
+    const [existingBudgets, limits] = await Promise.all([getBudgets(), getCurrentUserLimits()]);
+    if (countItemsCreatedThisMonth(existingBudgets) >= limits.budgetsPerMonth) {
+      throw createPlanLimitError();
+    }
+
     const budgetsRef = collection(db, 'users', userId, BUDGETS_COLLECTION);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...budgetData } = budget;
@@ -127,6 +134,11 @@ export const createRecurringExpense = async (
 ): Promise<void> => {
   try {
     const userId = getUserId();
+    const [existingExpenses, limits] = await Promise.all([getRecurringExpenses(), getCurrentUserLimits()]);
+    if (existingExpenses.length >= limits.recurringTemplates) {
+      throw createPlanLimitError();
+    }
+
     const expenseRef = doc(
       db,
       'users',

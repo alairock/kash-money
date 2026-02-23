@@ -213,7 +213,7 @@ export const BudgetView = () => {
 									<button
 										type="button"
 										onClick={handleUpdateStartingAmount}
-										className="gradient-success rounded-lg px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+										className="gradient-primary rounded-lg px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
 									>
 										Save
 									</button>
@@ -252,7 +252,7 @@ export const BudgetView = () => {
 				<button
 					type="button"
 					onClick={handleAddAdHoc}
-					className="gradient-success w-full rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl sm:w-auto"
+					className="gradient-primary w-full rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl sm:w-auto"
 				>
 					➕ Add Ad-hoc Item
 				</button>
@@ -478,7 +478,7 @@ const MobileLineItemCard = ({ item, isEditing, onEdit, onSave, onCancel, onUpdat
 						<button
 							type="button"
 							onClick={handleSave}
-							className="gradient-success rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+							className="gradient-primary rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
 						>
 							Save
 						</button>
@@ -742,7 +742,7 @@ const LineItemRow = ({ ref, item, index, isEditing, onEdit, onSave, onCancel, on
 						<button
 							type="button"
 							onClick={handleSave}
-							className="gradient-success rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
+							className="gradient-primary rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
 						>
 							Save
 						</button>

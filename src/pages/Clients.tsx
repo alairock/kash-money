@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { getClients, createClient, updateClient, deleteClient } from '../utils/billingStorage';
 import type { Client } from '../types/billing';
 import { formatCurrency } from '../utils/formatCurrency';
+import { getCurrentUserLimits } from '../utils/superAdminStorage';
+import { isPlanLimitError, PLAN_LIMIT_REACHED_TOOLTIP } from '../utils/limits';
+import { Tooltip } from '../components/Tooltip';
 
 export const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [clientLimit, setClientLimit] = useState(1);
 
   useEffect(() => {
     loadClients();
@@ -15,12 +19,26 @@ export const Clients = () => {
 
   const loadClients = async () => {
     setLoading(true);
-    const loadedClients = await getClients();
-    setClients(loadedClients);
-    setLoading(false);
+    try {
+      const [loadedClients, limits] = await Promise.all([getClients(), getCurrentUserLimits()]);
+      setClients(loadedClients);
+      setClientLimit(limits.clients);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+      setClients([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const addClientDisabled = clients.length >= clientLimit;
+
   const handleAddClient = async () => {
+    if (addClientDisabled) {
+      alert(PLAN_LIMIT_REACHED_TOOLTIP);
+      return;
+    }
+
     const newClient: Client = {
       id: crypto.randomUUID(),
       name: '',
@@ -32,10 +50,20 @@ export const Clients = () => {
       dateCreated: new Date().toISOString(),
     };
 
-    await createClient(newClient);
-    setClients([...clients, newClient]);
-    setEditingClient(newClient);
-    setNewlyCreatedId(newClient.id);
+    try {
+      await createClient(newClient);
+      setClients([...clients, newClient]);
+      setEditingClient(newClient);
+      setNewlyCreatedId(newClient.id);
+    } catch (error) {
+      if (isPlanLimitError(error)) {
+        alert(PLAN_LIMIT_REACHED_TOOLTIP);
+        return;
+      }
+
+      console.error('Error creating client:', error);
+      alert('Failed to create client');
+    }
   };
 
   const handleEditClient = (client: Client) => {
@@ -224,13 +252,18 @@ export const Clients = () => {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold">Clients</h2>
-        <button
-          type="button"
-          onClick={handleAddClient}
-          className="gradient-primary rounded-lg px-6 py-3 font-semibold text-white shadow-lg transition-all hover:scale-105"
-        >
-          ➕ Add Client
-        </button>
+        <Tooltip content={addClientDisabled ? PLAN_LIMIT_REACHED_TOOLTIP : ''}>
+          <div>
+            <button
+              type="button"
+              onClick={handleAddClient}
+              disabled={addClientDisabled}
+              className="gradient-primary rounded-lg px-6 py-3 font-semibold text-white shadow-lg transition-all hover:scale-105 disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-60 disabled:hover:scale-100"
+            >
+              ➕ Add Client
+            </button>
+          </div>
+        </Tooltip>
       </div>
 
       {clients.length === 0 ? (

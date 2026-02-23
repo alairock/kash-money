@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import type { Client, Invoice, CompanySettings } from '../types/billing';
+import { getCurrentUserLimits } from './superAdminStorage';
+import { countItemsCreatedThisMonth, createPlanLimitError } from './limits';
 
 const CLIENTS_COLLECTION = 'clients';
 const INVOICES_COLLECTION = 'invoices';
@@ -62,6 +64,11 @@ export const getClient = async (id: string): Promise<Client | undefined> => {
 export const createClient = async (client: Client): Promise<void> => {
   try {
     const userId = getUserId();
+    const [existingClients, limits] = await Promise.all([getClients(), getCurrentUserLimits()]);
+    if (existingClients.length >= limits.clients) {
+      throw createPlanLimitError();
+    }
+
     const clientRef = doc(db, 'users', userId, CLIENTS_COLLECTION, client.id);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...clientData } = client;
@@ -201,6 +208,11 @@ export const getInvoice = async (id: string): Promise<Invoice | undefined> => {
 export const createInvoice = async (invoice: Invoice): Promise<void> => {
   try {
     const userId = getUserId();
+    const [existingInvoices, limits] = await Promise.all([getInvoices(), getCurrentUserLimits()]);
+    if (countItemsCreatedThisMonth(existingInvoices) >= limits.invoicesPerMonth) {
+      throw createPlanLimitError();
+    }
+
     const invoiceRef = doc(db, 'users', userId, INVOICES_COLLECTION, invoice.id);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...invoiceData } = invoice;

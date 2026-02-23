@@ -6,6 +6,13 @@ import { BudgetsLayout } from './pages/BudgetsLayout';
 import { Budgets } from './pages/Budgets';
 import { BudgetView } from './pages/BudgetView';
 import { RecurringExpenses } from './pages/RecurringExpenses';
+import { Admin } from './pages/Admin';
+import { AdminProfile } from './pages/AdminProfile';
+import { AdminBilling } from './pages/AdminBilling';
+import { AdminUsage } from './pages/AdminUsage';
+import { SuperAdmin } from './pages/SuperAdmin';
+import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
+import { SuperAdminClients } from './pages/SuperAdminClients';
 import { Billing } from './pages/Billing';
 import { Invoices } from './pages/Invoices';
 import { Clients } from './pages/Clients';
@@ -39,6 +46,29 @@ export const App = () => {
             <Route path=":id" element={<BudgetView />} />
           </Route>
           <Route path="/recurring-expenses" element={<Navigate to="/budgets/recurring" replace />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="profile" element={<AdminProfile />} />
+            <Route path="billing" element={<AdminBilling />} />
+            <Route path="usage" element={<AdminUsage />} />
+          </Route>
+          <Route
+            path="/super-admin"
+            element={
+              <ProtectedRoute>
+                <SuperAdmin />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<SuperAdminDashboard />} />
+            <Route path="clients" element={<SuperAdminClients />} />
+          </Route>
           <Route
             path="/billing"
             element={

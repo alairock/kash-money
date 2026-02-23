@@ -11,12 +11,23 @@ import { formatCurrency } from '../utils/formatCurrency';
 import { downloadInvoicePDF } from '../utils/pdfGenerator';
 import { EmailPreviewModal } from '../components/EmailPreviewModal';
 import { Tooltip } from '../components/Tooltip';
+import { getCurrentUserLimits } from '../utils/superAdminStorage';
+import { countItemsCreatedThisMonth, PLAN_LIMIT_REACHED_TOOLTIP } from '../utils/limits';
 
 export const Invoices = () => {
+  const primaryButtonClass =
+    'gradient-primary rounded-xl px-4 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl';
+  const actionButtonClass =
+    'glass-effect rounded-xl px-3 py-1 text-sm font-semibold text-white/80 transition-all hover:scale-105 hover:text-white';
+  const successActionButtonClass =
+    'glass-effect rounded-xl px-3 py-1 text-sm font-semibold text-green-300 transition-all hover:scale-105';
+  const infoActionButtonClass =
+    'glass-effect rounded-xl px-3 py-1 text-sm font-semibold text-blue-300 transition-all hover:scale-105';
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'all' | Invoice['status']>('all');
   const [companySettings, setCompanySettings] = useState<CompanySettings | undefined>(undefined);
+  const [invoiceLimit, setInvoiceLimit] = useState(2);
   const [emailModalData, setEmailModalData] = useState<{
     invoice: Invoice;
     client: Client;
@@ -35,13 +46,21 @@ export const Invoices = () => {
 
   const loadInvoices = async () => {
     setLoading(true);
-    const [loadedInvoices, loadedCompanySettings] = await Promise.all([
-      getInvoices(),
-      getCompanySettings(),
-    ]);
-    setInvoices(loadedInvoices);
-    setCompanySettings(loadedCompanySettings);
-    setLoading(false);
+    try {
+      const [loadedInvoices, loadedCompanySettings, limits] = await Promise.all([
+        getInvoices(),
+        getCompanySettings(),
+        getCurrentUserLimits(),
+      ]);
+      setInvoices(loadedInvoices);
+      setCompanySettings(loadedCompanySettings);
+      setInvoiceLimit(limits.invoicesPerMonth);
+    } catch (error) {
+      console.error('Error loading invoices:', error);
+      setInvoices([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -107,6 +126,9 @@ export const Invoices = () => {
 
     return invoices.filter((invoice) => invoice.status === statusFilter);
   }, [invoices, statusFilter]);
+
+  const invoicesThisMonth = useMemo(() => countItemsCreatedThisMonth(invoices), [invoices]);
+  const createInvoiceDisabled = invoicesThisMonth >= invoiceLimit;
 
   const taxSetAsidePercentage = companySettings?.taxSetAsidePercentage || 0;
   const paidTaxesToBePaid =
@@ -229,8 +251,8 @@ export const Invoices = () => {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="order-2 basis-full flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto pr-1 text-sm sm:order-1 sm:basis-auto sm:w-auto">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="order-2 flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto pr-1 text-sm sm:order-1 sm:flex-1">
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
@@ -280,13 +302,18 @@ export const Invoices = () => {
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => navigate('/billing/invoices/new')}
-          className="order-1 basis-full w-[13.5rem] shrink-0 gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 sm:order-2 sm:ml-auto sm:basis-auto sm:w-auto"
-        >
-          ✨ Create New Invoice
-        </button>
+        <div className="order-1 self-start sm:order-2 sm:ml-auto">
+          <Tooltip content={createInvoiceDisabled ? PLAN_LIMIT_REACHED_TOOLTIP : ''}>
+            <button
+              type="button"
+              onClick={() => navigate('/billing/invoices/new')}
+              disabled={createInvoiceDisabled}
+              className={`${primaryButtonClass} w-[13.5rem] text-sm disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-60 disabled:hover:scale-100`}
+            >
+              ✨ Create New Invoice
+            </button>
+          </Tooltip>
+        </div>
       </div>
 
       {invoices.length === 0 ? (
@@ -341,7 +368,7 @@ export const Invoices = () => {
                       <button
                         type="button"
                         onClick={() => handleMarkAsPaid(invoice)}
-                        className="rounded glass-effect px-3 py-1 text-sm font-semibold text-green-400 transition-all hover:scale-105"
+                        className={successActionButtonClass}
                         title="Mark as Paid"
                       >
                         Paid?
@@ -351,7 +378,7 @@ export const Invoices = () => {
                   <button
                     type="button"
                     onClick={() => navigate(`/billing/invoices/${invoice.id}/edit`)}
-                    className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                    className={actionButtonClass}
                     title="Edit"
                   >
                     Edit
@@ -359,7 +386,7 @@ export const Invoices = () => {
                   <button
                     type="button"
                     onClick={() => handleDownloadPDF(invoice)}
-                    className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                    className={actionButtonClass}
                     title="Download PDF"
                   >
                     📄
@@ -367,7 +394,7 @@ export const Invoices = () => {
                   <button
                     type="button"
                     onClick={() => handleSendEmail(invoice)}
-                    className="rounded glass-effect px-3 py-1 text-sm font-semibold text-blue-400 transition-all hover:scale-105"
+                    className={infoActionButtonClass}
                     title="Send Email"
                   >
                     📧
@@ -455,7 +482,7 @@ export const Invoices = () => {
                             <button
                               type="button"
                               onClick={() => handleMarkAsPaid(invoice)}
-                              className="rounded glass-effect px-3 py-1 text-sm font-semibold text-green-400 transition-all hover:scale-105"
+                              className={successActionButtonClass}
                               title="Mark as Paid"
                             >
                               Paid?
@@ -465,7 +492,7 @@ export const Invoices = () => {
                         <button
                           type="button"
                           onClick={() => navigate(`/billing/invoices/${invoice.id}/edit`)}
-                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                          className={actionButtonClass}
                           title="Edit"
                         >
                           Edit
@@ -473,7 +500,7 @@ export const Invoices = () => {
                         <button
                           type="button"
                           onClick={() => handleDownloadPDF(invoice)}
-                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-white/70 transition-all hover:text-white"
+                          className={actionButtonClass}
                           title="Download PDF"
                         >
                           📄
@@ -481,7 +508,7 @@ export const Invoices = () => {
                         <button
                           type="button"
                           onClick={() => handleSendEmail(invoice)}
-                          className="rounded glass-effect px-3 py-1 text-sm font-semibold text-blue-400 transition-all hover:scale-105"
+                          className={infoActionButtonClass}
                           title="Send Email"
                         >
                           📧

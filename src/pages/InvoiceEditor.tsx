@@ -12,6 +12,7 @@ import {
 } from '../utils/billingStorage';
 import type { Client, Invoice, InvoiceLineItem } from '../types/billing';
 import { formatCurrency } from '../utils/formatCurrency';
+import { isPlanLimitError, PLAN_LIMIT_REACHED_TOOLTIP } from '../utils/limits';
 
 export const InvoiceEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -208,7 +209,7 @@ export const InvoiceEditor = () => {
       navigate('/billing/invoices');
     } catch (error) {
       console.error('Error saving invoice:', error);
-      alert('Failed to save invoice');
+      alert(isPlanLimitError(error) ? PLAN_LIMIT_REACHED_TOOLTIP : 'Failed to save invoice');
     }
     setSaving(false);
   };

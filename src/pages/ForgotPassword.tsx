@@ -70,7 +70,7 @@ export const ForgotPassword = () => {
 						<button
 							type="submit"
 							disabled={loading}
-							className="gradient-success group relative flex w-full justify-center rounded-xl px-4 py-3 text-base font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl disabled:opacity-50"
+							className="gradient-primary group relative flex w-full justify-center rounded-xl px-4 py-3 text-base font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl disabled:opacity-50"
 						>
 							{loading ? 'Sending...' : '📧 Send reset link'}
 						</button>

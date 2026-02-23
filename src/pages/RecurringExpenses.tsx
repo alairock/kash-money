@@ -7,16 +7,20 @@ import {
 	deleteRecurringExpense,
 } from '../utils/storage';
 import { formatCurrency } from '../utils/formatCurrency';
+import { getCurrentUserLimits } from '../utils/superAdminStorage';
+import { isPlanLimitError, PLAN_LIMIT_REACHED_TOOLTIP } from '../utils/limits';
+import { Tooltip } from '../components/Tooltip';
 
 export const RecurringExpenses = () => {
 	const [expenses, setExpenses] = useState<RecurringExpense[]>([]);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [templateLimit, setTemplateLimit] = useState(5);
 
 	const loadExpenses = useCallback(async () => {
 		try {
-			const loadedExpenses = await getRecurringExpenses();
+			const [loadedExpenses, limits] = await Promise.all([getRecurringExpenses(), getCurrentUserLimits()]);
 
 			// Migrate any expenses without order field
 			let needsUpdate = false;
@@ -36,6 +40,7 @@ export const RecurringExpenses = () => {
 			}
 
 			setExpenses(migratedExpenses);
+			setTemplateLimit(limits.recurringTemplates);
 		} catch (error) {
 			console.error('Error loading expenses:', error);
 		} finally {
@@ -47,7 +52,14 @@ export const RecurringExpenses = () => {
 		loadExpenses();
 	}, [loadExpenses]);
 
+	const addExpenseDisabled = expenses.length >= templateLimit;
+
 	const handleAddExpense = async () => {
+		if (addExpenseDisabled) {
+			alert(PLAN_LIMIT_REACHED_TOOLTIP);
+			return;
+		}
+
 		const newExpense: RecurringExpense = {
 			id: crypto.randomUUID(),
 			name: 'New Expense',
@@ -56,10 +68,20 @@ export const RecurringExpenses = () => {
 			order: expenses.length, // Add to end
 		};
 
-		await createRecurringExpense(newExpense);
-		setExpenses([...expenses, newExpense]);
-		setEditingId(newExpense.id);
-		setNewlyCreatedId(newExpense.id); // Mark this as newly created
+		try {
+			await createRecurringExpense(newExpense);
+			setExpenses([...expenses, newExpense]);
+			setEditingId(newExpense.id);
+			setNewlyCreatedId(newExpense.id); // Mark this as newly created
+		} catch (error) {
+			if (isPlanLimitError(error)) {
+				alert(PLAN_LIMIT_REACHED_TOOLTIP);
+				return;
+			}
+
+			console.error('Error creating recurring expense:', error);
+			alert('Failed to add recurring expense');
+		}
 	};
 
 	const handleUpdateExpense = async (id: string, updates: Partial<RecurringExpense>) => {
@@ -115,17 +137,22 @@ export const RecurringExpenses = () => {
 	};
 
 	return (
-		<div className="mx-auto max-w-6xl p-4 sm:p-6">
-			<div className="mb-6 flex justify-end sm:mb-8">
-				<button
-					type="button"
-					onClick={handleAddExpense}
-					className="gradient-success w-full rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl sm:w-auto"
-				>
-					<span className="sm:hidden">➕ Add Expense</span>
-					<span className="hidden sm:inline">➕ Add Recurring Expense</span>
-				</button>
-			</div>
+			<div className="mx-auto max-w-6xl p-4 sm:p-6">
+				<div className="mb-6 flex justify-end sm:mb-8">
+					<Tooltip content={addExpenseDisabled ? PLAN_LIMIT_REACHED_TOOLTIP : ''}>
+						<div className="w-full sm:w-auto">
+							<button
+								type="button"
+								onClick={handleAddExpense}
+								disabled={addExpenseDisabled}
+								className="gradient-primary w-full rounded-xl px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-2xl disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-60 disabled:hover:scale-100 sm:w-auto"
+							>
+								<span className="sm:hidden">➕ Add Expense</span>
+								<span className="hidden sm:inline">➕ Add Recurring Expense</span>
+							</button>
+						</div>
+					</Tooltip>
+				</div>
 
 			<div className="glass-effect rounded-2xl p-5 shadow-xl sm:p-6">
 				<h2 className="mb-3 text-xl font-bold sm:mb-4 sm:text-2xl">💸 Recurring Bills/Expenses</h2>
@@ -327,7 +354,7 @@ const MobileRecurringExpenseCard = ({
 						<button
 							type="button"
 							onClick={handleSave}
-							className="gradient-success rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
+							className="gradient-primary rounded-lg px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105"
 						>
 							Save
 						</button>
@@ -563,7 +590,7 @@ const RecurringExpenseRow = ({
 						<button
 							type="button"
 							onClick={handleSave}
-							className="gradient-success rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
+							className="gradient-primary rounded-lg px-3 py-1 text-xs font-bold text-white shadow-md transition-all hover:scale-105"
 						>
 							Save
 						</button>

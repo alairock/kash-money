@@ -5,7 +5,7 @@ import { auth } from '../config/firebase';
 import { useAuth } from '../hooks/useAuth';
 
 export const Nav = () => {
-	const { currentUser } = useAuth();
+	const { currentUser, isSuperAdmin, canAccessSuperAdmin } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -78,6 +78,14 @@ export const Nav = () => {
 								<NavLink to="/billing" className={linkClass}>
 									📄 Invoicing
 								</NavLink>
+								<NavLink to="/admin" className={linkClass}>
+									⚙️ Admin
+								</NavLink>
+								{isSuperAdmin && canAccessSuperAdmin ? (
+									<NavLink to="/super-admin" className={linkClass}>
+										🛡️ Super Admin
+									</NavLink>
+								) : null}
 							</div>
 						)}
 					</div>
@@ -100,7 +108,7 @@ export const Nav = () => {
 									<button
 										type="button"
 										onClick={() => navigate('/signup')}
-										className="gradient-success rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105"
+										className="gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105"
 									>
 										Sign up
 									</button>
@@ -156,6 +164,22 @@ export const Nav = () => {
 										>
 											Invoicing
 										</NavLink>
+										<NavLink
+											to="/admin"
+											className={mobileLinkClass}
+											onClick={() => setMobileMenuOpen(false)}
+										>
+											Admin
+										</NavLink>
+										{isSuperAdmin && canAccessSuperAdmin ? (
+											<NavLink
+												to="/super-admin"
+												className={mobileLinkClass}
+												onClick={() => setMobileMenuOpen(false)}
+											>
+												Super Admin
+											</NavLink>
+										) : null}
 									</div>
 
 									<div className="my-3 border-t border-white/10"></div>
@@ -186,7 +210,7 @@ export const Nav = () => {
 												setMobileMenuOpen(false);
 												navigate('/signup');
 											}}
-											className="gradient-success w-full rounded-lg px-4 py-2 text-right text-sm font-semibold text-white shadow-lg transition-all"
+											className="gradient-primary w-full rounded-lg px-4 py-2 text-right text-sm font-semibold text-white shadow-lg transition-all"
 										>
 											Sign up
 										</button>
